@@ -4,7 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Claude Architect Foundations – Quiz</title>
-    <link rel="stylesheet" href="/src/style.css" />
+    <!-- BUG-13 fixed: removed duplicate <link rel="stylesheet" href="/src/style.css" />.
+         CSS is injected via `import './style.css'` in main.js — the explicit link
+         would 404 in production after vite build hashes the asset. -->
   </head>
   <body>
     <div id="app">

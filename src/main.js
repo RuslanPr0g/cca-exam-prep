@@ -2,11 +2,13 @@ import './style.css';
 import {
   buildQueue,
   markCorrect,
-  toggleHard,
+  toggleHardQuestion,   // BUG-01: renamed from toggleHard to avoid shadowing
   isHard,
   resetAll,
   getStats,
   getHardIds,
+  getPersistedHardMode, // BUG-16: restore hard mode on refresh
+  setPersistedHardMode, // BUG-16
 } from './store.js';
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
@@ -27,22 +29,36 @@ const btnBookmark  = document.getElementById('btn-bookmark');
 const btnNext      = document.getElementById('btn-next');
 const btnHardMode  = document.getElementById('btn-hard-mode');
 const btnReset     = document.getElementById('btn-reset');
-const btnRestart   = document.getElementById('btn-restart');
+const btnRestart   = document.getElementById('btn-restart'); // BUG-11: use variable, not double getElementById
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let allQuestions = [];
 let queue        = [];
 let current      = null;
 let currentIndex = 0;
-let hardModeOn   = false;
+let hardModeOn   = getPersistedHardMode(); // BUG-16: restore from localStorage
+let answered     = false; // BUG-06: guard against double-answer race
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
-  const res = await fetch('/questions.json');
-  const data = await res.json();
-  allQuestions = data.questions;
+  try {
+    // BUG-03: handle fetch errors gracefully
+    const res = await fetch('/questions.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    allQuestions = data.questions ?? [];
+  } catch (err) {
+    console.error('Failed to load questions:', err);
+    showScreen('empty');
+    emptyMsg.textContent = 'Failed to load questions. Please refresh.';
+    return;
+  }
 
-  queue = buildQueue(allQuestions);
+  // BUG-16: restore hard mode button state after refresh
+  btnHardMode.classList.toggle('active', hardModeOn);
+  btnHardMode.title = hardModeOn ? 'Exit hard mode' : 'Show hard questions only';
+
+  queue = hardModeOn ? buildHardQueue() : buildQueue(allQuestions);
 
   if (queue.length === 0) {
     showScreen('empty');
@@ -72,12 +88,22 @@ function showScreen(name) {
   if (name === 'quiz')    screenQuiz.classList.remove('hidden');
 }
 
+// BUG-05: buildHardQueue defined BEFORE handleNext to avoid hoisting dependency
+function buildHardQueue() {
+  const hardIds = getHardIds();
+  const hardQs  = allQuestions.filter(q => hardIds.has(q.id));
+  return buildQueue(hardQs);
+}
+
 function showQuestion(idx) {
   currentIndex = idx;
-  current = queue[idx];
+  current      = queue[idx];
+  answered     = false; // BUG-06: reset answered flag per question
 
-  const pct = ((idx / queue.length) * 100).toFixed(1);
-  progressBar.style.width = `${pct}%`;
+  // BUG-04/BUG-15: use 1-based index so bar is never 0% and reflects real progress
+  const s   = getStats(allQuestions);
+  const pct = (((s.done + idx + 1) / s.total) * 100).toFixed(1);
+  progressBar.style.width = `${Math.min(pct, 100)}%`;
 
   // Q label with domain badge
   qLabel.textContent = `Q${current.id} · Domain ${current.domain} · Task ${current.task}`;
@@ -117,6 +143,10 @@ function showQuestion(idx) {
 }
 
 function handleAnswer(chosen) {
+  // BUG-06: prevent double-answer race condition
+  if (answered) return;
+  answered = true;
+
   const correct = chosen === current.correct;
 
   const buttons = optionsList.querySelectorAll('.option-btn');
@@ -124,12 +154,12 @@ function handleAnswer(chosen) {
 
   buttons.forEach(b => {
     const letter = b.dataset.letter;
-    if (letter === chosen)              b.classList.add(correct ? 'correct' : 'wrong');
+    if (letter === chosen)                               b.classList.add(correct ? 'correct' : 'wrong');
     if (letter === current.correct && letter !== chosen) b.classList.add('reveal');
   });
 
   feedbackDiv.classList.remove('hidden');
-  feedbackHdr.className = 'feedback-header ' + (correct ? 'ok' : 'bad');
+  feedbackHdr.className   = 'feedback-header ' + (correct ? 'ok' : 'bad');
   feedbackHdr.textContent = correct
     ? '✓ Correct!'
     : `✗ Wrong — correct answer: ${current.correct}`;
@@ -158,7 +188,8 @@ function handleNext() {
 }
 
 function handleToggleHard() {
-  const isNowHard = toggleHard(current.id);
+  // BUG-01: calls renamed toggleHardQuestion (not toggleHard) to avoid confusion
+  const isNowHard = toggleHardQuestion(current.id);
   btnBookmark.classList.toggle('is-hard', isNowHard);
   btnBookmark.textContent = isNowHard ? '★' : '☆';
   updateStats();
@@ -170,14 +201,16 @@ function handleReset() {
   location.reload();
 }
 
-function buildHardQueue() {
-  const hardIds = getHardIds();
-  const hardQs = allQuestions.filter(q => hardIds.has(q.id));
-  return buildQueue(hardQs);
-}
-
 function toggleHardMode() {
+  // BUG-07: only allow toggle between questions (not mid-answer before feedback)
+  // Queue is rebuilt and navigation jumps to Q0 — warn if mid-question.
+  if (!answered && feedbackDiv.classList.contains('hidden') && queue.length > 0) {
+    // User hasn't answered current question yet — confirm before discarding it
+    if (!confirm('Switch mode now? Current question progress will be lost.')) return;
+  }
+
   hardModeOn = !hardModeOn;
+  setPersistedHardMode(hardModeOn); // BUG-16: persist across refresh
   btnHardMode.classList.toggle('active', hardModeOn);
   btnHardMode.title = hardModeOn ? 'Exit hard mode' : 'Show hard questions only';
 
@@ -186,6 +219,7 @@ function toggleHardMode() {
     if (queue.length === 0) {
       alert('No hard questions marked yet. Bookmark some with ★ first.');
       hardModeOn = false;
+      setPersistedHardMode(false);
       btnHardMode.classList.remove('active');
       return;
     }
@@ -200,7 +234,7 @@ function toggleHardMode() {
 btnNext.addEventListener('click', handleNext);
 btnBookmark.addEventListener('click', handleToggleHard);
 btnReset.addEventListener('click', handleReset);
-document.getElementById('btn-restart').addEventListener('click', () => location.reload());
+btnRestart.addEventListener('click', () => location.reload()); // BUG-11: use variable
 btnHardMode.addEventListener('click', toggleHardMode);
 
 // ── Start ─────────────────────────────────────────────────────────────────────
