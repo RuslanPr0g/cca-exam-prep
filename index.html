@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Claude Architect Foundations – Quiz</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- Header -->
+      <header id="header">
+        <div class="header-inner">
+          <div class="brand">
+            <span class="logo">🤖</span>
+            <span class="brand-name">Claude Architect Quiz</span>
+          </div>
+          <div class="stats" id="stats"></div>
+          <div class="header-actions">
+            <button id="btn-hard-mode" class="btn-ghost" title="Show hard questions only">⭐ Hard</button>
+            <button id="btn-reset" class="btn-ghost danger" title="Reset all progress">↺ Reset</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main content -->
+      <main id="main">
+        <div id="screen-loading" class="screen center">
+          <div class="spinner"></div>
+          <p>Loading questions…</p>
+        </div>
+
+        <div id="screen-empty" class="screen center hidden">
+          <div class="empty-state">
+            <div class="big-emoji">🎉</div>
+            <h2>All done!</h2>
+            <p id="empty-msg">You answered all questions correctly.</p>
+            <button id="btn-restart" class="btn-primary">Start Over</button>
+          </div>
+        </div>
+
+        <div id="screen-quiz" class="screen hidden">
+          <!-- Progress bar -->
+          <div class="progress-wrap">
+            <div class="progress-bar" id="progress-bar"></div>
+          </div>
+
+          <!-- Question card -->
+          <div class="card" id="question-card">
+            <div class="card-meta">
+              <span id="q-label" class="q-label"></span>
+              <div class="card-meta-right">
+                <span id="q-position" class="q-position"></span>
+                <button id="btn-bookmark" class="bookmark" title="Mark as hard">☆</button>
+              </div>
+            </div>
+
+            <h2 id="question-text" class="question-text"></h2>
+
+            <div id="options-list" class="options-list"></div>
+
+            <div id="feedback" class="feedback hidden">
+              <div id="feedback-header" class="feedback-header"></div>
+              <p id="feedback-explanation" class="feedback-explanation"></p>
+              <button id="btn-next" class="btn-primary">Next question →</button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
