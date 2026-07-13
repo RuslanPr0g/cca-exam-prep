@@ -401,6 +401,406 @@
       "domainName": "Agentic Architecture &amp; Orchestration",
       "task": "1.7",
       "source": "ai"
+    },
+    {
+      "id": "ai-26",
+      "questionText": "A ride-sharing app has two tools: `estimate_fare` (\"Returns a fare for a trip\") and `calculate_trip_cost` (\"Returns the cost of a trip\"). Logs show that in 18% of completed trips, the agent calls `estimate_fare` after the ride has ended and displays the pre-trip estimate to the rider as their final charged amount, which sometimes differs from what was actually billed. What is the most effective fix?",
+      "options": {
+        "A": "Add few-shot examples to the system prompt showing the agent calling `calculate_trip_cost` after a trip ends and `estimate_fare` before one begins.",
+        "B": "Rewrite both tools' descriptions to state an explicit boundary: `estimate_fare` returns a pre-trip quote only and should never be used once a trip has ended, while `calculate_trip_cost` returns the finalized post-trip amount — each description naming the other tool and when to defer to it.",
+        "C": "Add a routing layer that classifies whether a trip is in progress or completed and calls the correct tool programmatically based on that classification.",
+        "D": "Consolidate both tools into a single `get_fare_info` tool that always returns whatever amount is currently available, whether estimated or final."
+      },
+      "correct": "B",
+      "explanation": "The two descriptions never establish a boundary, so the model has no way to learn from them which one applies to a finished trip; naming the boundary and cross-referencing the sibling tool in both descriptions is the direct fix, and it's a one-time change rather than new infrastructure. Option A leaves the ambiguous descriptions in place and hopes examples generalize to the many trip-timing edge cases 18% of trips already represent — a probabilistic patch on a documentation gap. Option C solves the same problem with new code most of a codebase doesn't need when the tools' own text can carry the distinction. Option D removes the very distinction riders need — a rider mid-trip and one who just finished would get indistinguishable responses from a single merged tool.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.1",
+      "source": "ai"
+    },
+    {
+      "id": "ai-27",
+      "questionText": "A pharmacy app's `schedule_refill` tool requires a `refill_date` argument in `YYYY-MM-DD` format. Its description reads only: \"Schedules a prescription refill for a specified date.\" Logs show the agent frequently passes phrases like \"next Monday\" or \"in two weeks,\" and 22% of refill requests fail validation as a result. What change most directly reduces these failures?",
+      "options": {
+        "A": "Add a system prompt instruction: \"Always call `schedule_refill` using YYYY-MM-DD format.\"",
+        "B": "Add schema validation that rejects any `refill_date` not matching `YYYY-MM-DD` and returns a structured error back to the agent.",
+        "C": "Add the required format, an example value, and a note that relative phrases like \"next Monday\" must be resolved to a calendar date before calling, directly into the tool's description.",
+        "D": "Split `schedule_refill` into `schedule_refill_relative` and `schedule_refill_exact` to separate the two input styles."
+      },
+      "correct": "C",
+      "explanation": "The tool description is the model's primary source of information at the moment it decides how to format a call, so putting the format, an example, and the relative-phrase caveat there addresses the failures at their origin. Option A adds the same instruction one layer removed, in the system prompt, which is more fragile than information attached directly to the tool the model is about to invoke. Option B would catch bad input after the fact and could reduce silent errors, but it doesn't teach the model the correct format up front, so the 22% failure-then-retry cycle continues rather than being prevented. Option D solves a disambiguation problem this scenario doesn't have — there's only one date argument and one failure mode (wrong format), not two competing use cases that need separate tools.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.1",
+      "source": "ai"
+    },
+    {
+      "id": "ai-28",
+      "questionText": "A city permitting system exposes three tools: `get_permit_status` (\"Get the status of a permit\"), `check_permit_details` (\"Check details for a permit\"), and `retrieve_application_record` (\"Retrieve a record for an application\"). Each calls a different backend — building department, zoning department, and code enforcement respectively — and the agent frequently queries the wrong department's system for a given case. What most effectively resolves the misrouting?",
+      "options": {
+        "A": "Add a system prompt instruction listing all three tools and specifying which department each is used for.",
+        "B": "Consolidate the three tools into a single tool that accepts a `department` parameter specifying which backend to query.",
+        "C": "Have the agent call all three tools for every request and merge whichever results come back non-empty.",
+        "D": "Rename each tool to reflect its backend (e.g. `get_building_permit_status`, `get_zoning_case_details`, `get_code_enforcement_record`) and rewrite each description to state what data it returns, which department it queries, and when to use it."
+      },
+      "correct": "D",
+      "explanation": "The three names and descriptions are currently near-synonyms that give the model no way to distinguish them, so renaming to reflect the actual backend and writing descriptions around what each returns and when it applies fixes the root ambiguity. Option A layers guidance in the system prompt on top of tools whose own names and descriptions still look interchangeable, leaving the underlying confusion in place for any request not explicitly covered by that list. Option B trades three ambiguous tools for one tool whose correctness now depends on the model picking the right `department` value — the same discrimination problem, just moved into a parameter instead of a tool name. Option C isn't a real fix; querying all three departments for every request wastes calls and still requires deciding which result is the relevant one.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.1",
+      "source": "ai"
+    },
+    {
+      "id": "ai-29",
+      "questionText": "An e-commerce catalog exposes `search_products` (keyword search only) and `filter_products` (structured attribute and price filtering). `search_products`'s description doesn't mention that it ignores price constraints. In roughly 20% of complex queries — e.g. \"waterproof boots under $80\" — the agent passes the price as part of the search keywords to `search_products`, which silently ignores it and returns boots across all price ranges. What is the most effective fix?",
+      "options": {
+        "A": "Rewrite `search_products`'s description to state explicitly that it performs keyword matching only, that it does not apply price or attribute constraints, and that `filter_products` should be used for those, with an example of a query that needs both tools together.",
+        "B": "Merge `search_products` and `filter_products` into a single tool that accepts both a keyword string and structured filter parameters.",
+        "C": "Add few-shot examples to the system prompt demonstrating a combined keyword-and-price query handled correctly.",
+        "D": "Add a validation layer to `search_products` that detects price-like values in the keyword string and returns an error asking the agent to retry using `filter_products` instead."
+      },
+      "correct": "A",
+      "explanation": "The failure is that `search_products`'s description never discloses its own boundary, so the model has no way to know price constraints need a different tool; stating the boundary and pointing to the sibling tool, with a worked example, fixes the ambiguity at its source. Option B is a legitimate architectural response to overlapping tools, but it's a heavier redesign than the ambiguity warrants when a description fix resolves it directly — and it complicates the schema for the 80% of queries that only need keyword search. Option C leaves the description's silent gap in place and asks examples to generalize across combined-query phrasing, which is exactly the kind of probabilistic patch that a boundary statement in the description avoids needing. Option D catches the mistake only after the call is made and burns a round trip on every offending query, rather than preventing the agent from choosing the wrong tool in the first place.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.1",
+      "source": "ai"
+    },
+    {
+      "id": "ai-30",
+      "questionText": "An HR system has `update_employee_record` for general field updates and `terminate_employment`, which enforces a manager-approval workflow. `update_employee_record`'s description is a long paragraph that mentions, midway through, \"...including status changes such as active, leave, or terminated.\" In 9% of terminations, the agent sets status to \"terminated\" via `update_employee_record`, bypassing the approval workflow entirely. What is the most effective fix?",
+      "options": {
+        "A": "Add a `PreToolUse` hook that intercepts `update_employee_record` calls and blocks any that attempt to set status to \"terminated.\"",
+        "B": "Rewrite `update_employee_record`'s description to lead with an explicit exclusion — stating up front that it must never be used to set status to \"terminated,\" and directing the model to `terminate_employment` for that action — rather than burying the carve-out mid-paragraph.",
+        "C": "Add a system prompt rule instructing the agent to never use `update_employee_record` for terminations.",
+        "D": "Add few-shot examples showing `terminate_employment` used for every termination scenario in the prompt."
+      },
+      "correct": "B",
+      "explanation": "The description technically documents the overlap but buries the one detail that matters where the model is least likely to weight it; moving the exclusion to the front of the description is a direct interface fix for a tool-selection failure rooted in how the tool is described. Option A is a real, deterministic safeguard for the approval workflow itself, but it treats the symptom of this specific misuse rather than the tool-design defect that let a poorly-documented boundary cause it, and it does nothing for other undocumented edge cases the same buried-detail pattern could still produce. Option C repeats the same probabilistic reliance on prompt compliance the buried clause already represents, just relocated to a different document the model must also weigh correctly. Option D show the right tool being used correctly but doesn't address why the wrong tool is chosen in the first place — the model isn't failing to know `terminate_employment` exists, it's failing to notice `update_employee_record`'s hidden exclusion.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.1",
+      "source": "ai"
+    },
+    {
+      "id": "ai-31",
+      "questionText": "A food-delivery platform's `assign_driver` MCP tool returns the same generic response for every failure: `{\"success\": false}`. This single shape is triggered by: no drivers currently available, the target driver already has an active delivery, an invalid restaurant address, and a declined payment authorization. The agent currently responds to every case identically — apologizing to the customer and cancelling the order. What structured error design would most improve recovery?",
+      "options": {
+        "A": "Return a distinct HTTP status code for each of the four failure conditions and have the agent branch its recovery logic on the status code.",
+        "B": "Return a verbose error payload including the full backend stack trace and driver-dispatch system state for every failure, giving the agent maximum context to reason from.",
+        "C": "Return structured error metadata — an `errorCategory` (e.g. transient/validation/permission/business), an `isRetryable` boolean, and a explanation specific to the failure reason.",
+        "D": "Return a numeric error code for each condition and maintain a mapping from code to recovery action in the system prompt."
+      },
+      "correct": "C",
+      "explanation": "The four failures need genuinely different responses — retry shortly for no-drivers-available, ask for a corrected address, don't retry a declined payment — and structured category/retryability/explanation fields give the agent exactly the decision inputs it needs to tell them apart. Option A relies on HTTP status semantics that weren't designed to express business-logic distinctions like \"driver already has an active delivery,\" and mapping four domain-specific conditions onto generic codes loses the nuance that fields like `isRetryable` capture directly. Option B floods the agent's context with backend internals it can't act on and that have no bearing on which of the four categories applies, without adding any decision-relevant structure. Option D encodes the actual recovery logic in the system prompt rather than in the tool's own response, which becomes harder to maintain as new failure conditions are added and keeps failure semantics separate from the data describing them.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.2",
+      "source": "ai"
+    },
+    {
+      "id": "ai-32",
+      "questionText": "An inventory tool `check_stock` returns `{\"available_locations\": [], \"status\": \"success\"}` whenever it's called. Investigation reveals the inventory database was actually unreachable for several hours, but the tool's error handling caught the connection failure and returned an empty locations list marked successful. During that window, the agent told customers the item was \"out of stock everywhere\" rather than reporting a system issue. What change prevents this confusion?",
+      "options": {
+        "A": "Always return at least one location in the array, using cached or estimated data whenever the live lookup returns nothing.",
+        "B": "Add a `confidence` field to the response so the agent can infer whether an empty result reflects a real outcome or a failure.",
+        "C": "Implement automatic retry inside the tool itself, so the agent never observes an empty result unless every retry attempt is exhausted.",
+        "D": "Distinguish access failures from valid empty results: use the `isError` flag when the database can't be reached, and reserve `{\"available_locations\": [], \"status\": \"success\"}` only for genuine, confirmed no-stock-anywhere outcomes."
+      },
+      "correct": "D",
+      "explanation": "The tool is collapsing two fundamentally different conditions — the backend being unreachable, and the backend confirming there's genuinely no stock — into an identical response, so option D's `isError` distinction gives the agent the information needed to report a system issue instead of a false stock-out. Option A fabricates plausible-looking data during an outage, which is worse than an ambiguous response because it presents guessed information as a confirmed inventory check. Option B adds a field whose meaning is genuinely unclear for a real, confirmed empty result — a confidence score on \"we checked every location and found none\" doesn't correspond to anything meaningful. Option C addresses retries at the wrong layer and doesn't fix the underlying confusion: after retries are exhausted the tool still returns the same misleading successful-empty shape, and the agent still can't tell an outage from a genuine stock-out.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.2",
+      "source": "ai"
+    },
+    {
+      "id": "ai-33",
+      "questionText": "A content-moderation tool `publish_post` returns `{\"isError\": true, \"message\": \"Blocked by moderation\"}` when a post is flagged for a policy violation. The agent interprets this as transient and retries up to four times, and each retry generates a separate duplicate review ticket in the compliance queue. What is the missing element in the error response design?",
+      "options": {
+        "A": "Include `isRetryable: false` along with an explanation that distinguishes this policy-based block from a transient system error, so the agent stops retrying and instead surfaces the block appropriately.",
+        "B": "Suppress the `isError` flag and instead return the block as a successful response with a `blocked: true` field.",
+        "C": "Include a `retry_after` timestamp telling the agent when it would be appropriate to retry the call.",
+        "D": "Include the specific moderation rule ID and a confidence score so the agent can decide for itself whether to override the block and republish."
+      },
+      "correct": "A",
+      "explanation": "A policy block is inherently non-retryable — republishing the identical content will trigger the identical block — so `isRetryable: false` paired with a clear explanation is precisely the signal missing today, and it directly stops the duplicate-ticket-generating retry loop. Option B hides that a genuine error condition occurred behind a successful-looking response, which makes the block harder for calling code and monitoring to distinguish from ordinary success. Option C implies the block is temporary and will resolve with time, which is the opposite of what a policy violation represents — retrying after any elapsed period reproduces the same block. Option D hands the agent authority to second-guess and override a compliance decision it is very likely not meant to have — moderation blocks are a business rule constraint, not a judgment call for the requesting agent to relitigate.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.2",
+      "source": "ai"
+    },
+    {
+      "id": "ai-34",
+      "questionText": "A `validate_address` MCP tool, on failure, returns the full exception stack trace, the internal database query it ran, and the backend server's hostname directly in the response sent to the model. This floods the agent's context on every failed validation, and on at least two occasions the agent has quoted the internal hostname back to a customer in an apology message. What is the right fix?",
+      "options": {
+        "A": "Keep the full diagnostic payload in the response but add a warning field instructing the agent not to repeat internal details to customers.",
+        "B": "Return a concise structured error to the model — an error category, a customer-safe explanation, and a suggested corrective action — and log the full stack trace, query, and hostname server-side only, never in the tool's response.",
+        "C": "Truncate the stack trace to only its first line before including it in the response.",
+        "D": "Wrap the internal diagnostic details in a code block within the response so the agent recognizes them as technical rather than customer-facing."
+      },
+      "correct": "B",
+      "explanation": "The internal details never needed to reach the model at all — they're useful only for engineers debugging server-side — so keeping them out of the tool's response entirely both removes the context bloat and makes it structurally impossible for the model to quote a hostname it was never given. Option A leaves the sensitive material in the model's context and asks it to reliably withhold specific pieces of it, which is exactly the kind of instruction-following the two prior incidents already show can fail. Option C reduces the volume of leaked internals without addressing that any of them reach the model at all — a truncated stack trace's first line can still contain a hostname or query fragment. Option D changes formatting, not exposure — the hostname is still present in the model's context and available for it to reproduce regardless of how it's visually delimited.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.2",
+      "source": "ai"
+    },
+    {
+      "id": "ai-35",
+      "questionText": "A `bulk_import_customers` tool processes batches of up to 500 records. On a batch of 500 where 14 have invalid email addresses, the tool returns `{\"status\": \"error\"}` for the whole batch — but investigation shows it had already committed the other 486 valid records to the database before hitting the invalid ones. The agent, seeing only the generic error, resubmits all 500 records, creating duplicate entries for the 486 that already succeeded. What is the most effective fix?",
+      "options": {
+        "A": "Automatically roll back the 486 successful commits whenever any record in the batch fails validation, so the batch is always all-or-nothing.",
+        "B": "Add stricter pre-validation that checks every record in the batch before committing any of them, so partial commits can never occur.",
+        "C": "Return a structured partial-success response listing the count and identifiers of the committed records plus the specific reason each of the 14 failed, so the agent knows to resubmit only the failed subset.",
+        "D": "Reduce the maximum batch size so each request contains fewer records, lowering the odds that any single batch contains an invalid record."
+      },
+      "correct": "C",
+      "explanation": "The actual defect is that the response doesn't reflect what genuinely happened — 486 records did succeed — so reporting that partial outcome accurately is what lets the agent act correctly, resubmitting only the 14 that failed instead of all 500. Option A throws away 486 legitimate, already-committed imports purely to make the response shape simpler, which is a costly overcorrection when accurate partial reporting solves the same confusion without discarding real work. Option B would prevent this specific partial-commit shape, but it requires validating the entire batch atomically before any writes, which may not be architecturally available here and doesn't generalize to failures that only manifest during the commit itself. Option D shrinks batch size without changing what the tool reports when a failure does occur — smaller batches can still contain an invalid record and would still trigger the same misleading all-or-nothing error today.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.2",
+      "source": "ai"
+    },
+    {
+      "id": "ai-36",
+      "questionText": "A caption-writing agent frequently needs to verify text length against platform limits while drafting. Today, every check round-trips through the coordinator to a specialized text-analysis agent, adding 2-3 exchanges per caption. About 90% of these checks are simple word or character counts; the remaining 10% require genuine readability analysis (sentence complexity, reading-grade level) that only the specialized agent can perform. What is the most effective way to reduce overhead while preserving reliability for the complex cases?",
+      "options": {
+        "A": "Give the caption-writing agent direct access to the specialized agent's full readability-analysis toolset, bypassing the coordinator for every check.",
+        "B": "Have the caption-writing agent accumulate all its verification needs during a pass and send them to the coordinator as a single batch at the end.",
+        "C": "Have the specialized readability agent proactively pre-compute anticipated checks for every caption during the initial drafting phase.",
+        "D": "Give the caption-writing agent a scoped `count_words` tool to handle the common case directly, while complex readability analysis continues to be delegated to the specialized agent through the coordinator."
+      },
+      "correct": "D",
+      "explanation": "Distributing only the narrowly-scoped tool the 90% case actually needs keeps the existing coordination pattern intact for the 10% that genuinely requires it, cutting most of the round trips without touching the path that needs specialist judgment. Option A over-provisions the caption agent with an entire specialized toolset when it only ever needs simple counts, increasing the chance it misuses tools meant for genuine readability analysis. Option B still funnels every check, including the trivial ones, through a coordinator round trip — just fewer, larger ones — and introduces a blocking delay where verification results aren't available until the whole pass finishes. Option C asks the specialized agent to guess which checks will be needed before drafting has happened, which is speculative work that may not match what the caption agent actually ends up needing to verify.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.3",
+      "source": "ai"
+    },
+    {
+      "id": "ai-37",
+      "questionText": "An invoice-formatting agent's sole job is to lay out and style invoice documents. It has been given access to the full 15-tool suite used across the billing system, including `delete_invoice` and `send_payment_reminder`, on the reasoning that more tools provide more flexibility. On one occasion it called `send_payment_reminder` mid-formatting, sending a reminder to a customer who hadn't been billed yet. What is the most effective fix?",
+      "options": {
+        "A": "Scope the agent's tool access down to only what formatting requires, removing `delete_invoice`, `send_payment_reminder`, and other tools outside its specialization.",
+        "B": "Add a system prompt instruction telling the agent to only use tools relevant to formatting invoices.",
+        "C": "Keep the full 15-tool suite but require manager confirmation before `send_payment_reminder` is allowed to execute.",
+        "D": "Reduce the suite to the 5 most commonly used tools instead of all 15, keeping the rest available on request."
+      },
+      "correct": "A",
+      "explanation": "An agent given tools outside its specialization will occasionally misuse them regardless of intent, so scoping its tool set to formatting-only tools removes the capability that produced the misfire entirely, rather than managing the risk it creates. Option B leaves every unrelated tool, including `send_payment_reminder`, available and reachable, relying on the same probabilistic prompt compliance that already failed once. Option C adds a safeguard specifically around the one tool that already misfired but leaves the agent holding `delete_invoice` and the rest of the unrelated suite, so a different tool could misfire the same way next. Option D reduces the count without addressing relevance — nothing guarantees the 5 \"most commonly used\" tools are the formatting-relevant ones, and a mis-scoped tool used often is still mis-scoped.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.3",
+      "source": "ai"
+    },
+    {
+      "id": "ai-38",
+      "questionText": "A legal-document review agent must call `redact_pii` on every single invocation before it finalizes its output — never optionally, never in place of some other tool. Which `tool_choice` configuration guarantees this?",
+      "options": {
+        "A": "Set `tool_choice: \"auto\"`, letting the model decide when redaction is needed.",
+        "B": "Set `tool_choice: {\"type\": \"tool\", \"name\": \"redact_pii\"}`, forcing the model to call `redact_pii` specifically.",
+        "C": "Set `tool_choice: \"any\"`, requiring the model to call some tool without specifying which one.",
+        "D": "Remove every other tool from the agent's tool list so `redact_pii` is the only one it can call."
+      },
+      "correct": "B",
+      "explanation": "Forcing the specific tool by name is the only configuration that guarantees both that a tool is called and that it's the one that matters here, on every single invocation. Option A leaves the decision to the model, which can return plain text with no tool call at all — the opposite of \"never optionally.\" Option C guarantees a tool call happens but not which one, so if the agent has other legitimate tools available it could satisfy the constraint by calling one of those instead of `redact_pii`. Option D achieves the outcome indirectly by removing every alternative, but it strips the agent of any other tools it may legitimately need elsewhere in its workflow, rather than simply constraining this specific requirement.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.3",
+      "source": "ai"
+    },
+    {
+      "id": "ai-39",
+      "questionText": "A signup flow requires that before an account is created, the agent perform at least one identity check — either `verify_email` or `verify_phone` — but it genuinely does not matter which one, and the agent should be free to pick based on what contact information the user provided. Which `tool_choice` configuration is correct?",
+      "options": {
+        "A": "Set `tool_choice: \"auto\"`, letting the model decide whether verification is needed at all.",
+        "B": "Set `tool_choice: {\"type\": \"tool\", \"name\": \"verify_email\"}`, forcing the model to call `verify_email` specifically.",
+        "C": "Set `tool_choice: \"any\"`, guaranteeing the model calls some tool without constraining which of the two verification tools it is.",
+        "D": "Remove `verify_phone` from the agent's tool list so only `verify_email` remains available."
+      },
+      "correct": "C",
+      "explanation": "\"Any\" is the configuration built for exactly this shape of requirement — it guarantees a tool call happens on every invocation while leaving the choice of which eligible tool to the model, matching the stated \"doesn't matter which\" constraint precisely. Option A doesn't guarantee a tool call at all; the model could proceed to account creation reasoning without having verified anything, which is the failure mode this requirement exists to prevent. Option B forces a specific one of the two, which over-constrains the requirement — a user who only provided a phone number would have no way to satisfy verification through the tool the model is being forced to call. Option D achieves single-tool forcing by removing the alternative, which permanently eliminates phone-based verification as an option for every user, not just the ones who happen to provide an email.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.3",
+      "source": "ai"
+    },
+    {
+      "id": "ai-40",
+      "questionText": "A payment tool `charge_customer` is granted to both the intake agent and the billing agent in a multi-agent order pipeline, \"just in case\" either one needs it. In about 3% of orders, both agents independently decide the charge is due and call `charge_customer`, resulting in the customer being billed twice. What is the most effective fix?",
+      "options": {
+        "A": "Add an idempotency key to `charge_customer` so that a duplicate call doesn't result in a second charge.",
+        "B": "Add a system prompt instruction to the intake agent telling it never to call `charge_customer`.",
+        "C": "Merge the intake and billing agents into a single agent, so there is only one place `charge_customer` could ever be called from.",
+        "D": "Remove `charge_customer` from the intake agent's tool list, distributing it only to the billing agent — the one actually responsible for that step."
+      },
+      "correct": "D",
+      "explanation": "Granting the same consequential tool to two agents for the same step is a distribution error independent of whether double-charging happens to occur, and removing it from the agent that isn't responsible for billing eliminates the redundant authority at its source. Option A is a real, valid safeguard for retries of the *same* call, but it depends on both independently-constructed calls sharing an identical idempotency key, which isn't guaranteed across two separately reasoning agents — it treats a symptom that could recur in a different form even if this exact duplication is caught. Option B relies on the intake agent reliably following an instruction not to use a tool it still has access to, which is the same probabilistic compliance already shown to fail 3% of the time. Option C removes the redundancy but does so by eliminating the coordinator-subagent separation entirely, a far larger architectural change than the actual defect — one agent holding a tool it shouldn't — requires.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.3",
+      "source": "ai"
+    },
+    {
+      "id": "ai-41",
+      "questionText": "Your team is setting up a shared Jira MCP server for everyone on a project. The server needs an API token for authentication. You want every engineer to get the server automatically when they clone the repository, without individually configuring it, and without the token ever being committed in plaintext. What is the correct approach?",
+      "options": {
+        "A": "Add the MCP server to the project-scoped `.mcp.json` file with the token specified via environment variable expansion (e.g. `${JIRA_TOKEN}`), and commit `.mcp.json` to the repository.",
+        "B": "Add the MCP server to each developer's personal `~/.claude.json` with their own token hardcoded.",
+        "C": "Document the required MCP server configuration in the README and have each developer add it manually to their own setup.",
+        "D": "Commit `.mcp.json` with the token value embedded directly, relying on the repository being private to protect it."
+      },
+      "correct": "A",
+      "explanation": "Project-scoped `.mcp.json` is exactly the mechanism designed for this: committing it distributes the server configuration automatically to everyone who clones the repo, while `${JIRA_TOKEN}` expansion means the actual secret is injected from each developer's own environment at runtime rather than stored in version control. Option B requires every developer to manually configure their personal file and hardcodes a live credential into a file that risks being copied or leaked. Option C solves neither stated requirement — every developer still does manual setup, exactly what \"without individually configuring it\" rules out. Option D commits a real token to version control, which remains in the repository's history indefinitely regardless of the repo's current visibility settings and is exactly the plaintext-commit outcome the requirement excludes.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.4",
+      "source": "ai"
+    },
+    {
+      "id": "ai-42",
+      "questionText": "A developer-productivity agent connected to a data-warehouse MCP server repeatedly makes exploratory tool calls — \"what tables exist,\" \"what columns does this table have\" — before it can answer even simple questions about the data, adding latency and consuming context on nearly every session. What MCP feature most directly addresses this discovery overhead?",
+      "options": {
+        "A": "Add a `list_tables` meta-tool to the server that returns all table names and schemas when called.",
+        "B": "Expose the table catalog as an MCP resource, giving the agent visibility into what data is available at connection time rather than through exploratory tool calls.",
+        "C": "Reduce the number of query tools in the MCP server by merging related ones together to shrink the discovery surface.",
+        "D": "Add a caching layer that stores the results of previous discovery calls and reuses them across sessions."
+      },
+      "correct": "B",
+      "explanation": "MCP resources exist precisely to expose this kind of content catalog at connection time, so the agent has the schema information available before it ever needs to ask — eliminating the exploratory round trips rather than making them faster or cheaper. Option A still requires a tool call to retrieve the catalog; it reduces the number of exploratory calls from several to one but doesn't remove the discovery step from the agent's workflow the way resources do. Option C reduces how many tools exist but does nothing about the fact that the agent still has to discover what data those remaining tools cover before it can use them. Option D caches call results across sessions, but a schema discovered once and cached can silently go stale as the warehouse evolves, and it doesn't address the first-session cost the pattern imposes.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.4",
+      "source": "ai"
+    },
+    {
+      "id": "ai-43",
+      "questionText": "A developer wants to connect an experimental MCP server they're evaluating — it's not something the rest of the team should get automatically, and it shouldn't appear in the repository at all. What is the correct configuration approach?",
+      "options": {
+        "A": "Add it to the project-scoped `.mcp.json` file with a comment marking it as experimental and personal.",
+        "B": "Add it to `.mcp.json` but list `.mcp.json` in `.gitignore` so it never actually gets committed.",
+        "C": "Add it to the user-level `~/.claude.json` rather than the project-scoped `.mcp.json`, since that scope is personal to the developer and isn't distributed through the repository.",
+        "D": "Add the server's configuration to `CLAUDE.md` under a section marked for personal use only."
+      },
+      "correct": "C",
+      "explanation": "The developer's requirement — available to them, invisible to the team and the repo — is exactly what the user-level configuration scope is for, keeping the server entirely outside anything committed or shared through the project. Option A puts the configuration in the exact file meant to be shared and committed, directly contradicting the stated requirement that it not appear in the repository at all, regardless of a comment marking intent. Option B still edits the project's `.mcp.json`, and if that path is also used for the team's shared servers, gitignoring the whole file would silently un-share those too — a fragile way to achieve personal scoping when a dedicated personal-scope file already exists. Option D describes a configuration mechanism CLAUDE.md doesn't have; it's a documentation file, not a place MCP servers are registered from.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.4",
+      "source": "ai"
+    },
+    {
+      "id": "ai-44",
+      "questionText": "A developer has six MCP servers configured, but any given project typically only needs one or two of them. Every session nonetheless loads all six servers' tool schemas into context, adding noticeable token overhead even to projects that use none of the unrelated servers' capabilities. What is the most effective fix?",
+      "options": {
+        "A": "Rewrite each tool's description across all six servers to be as short as possible, minimizing the per-server token footprint.",
+        "B": "Instruct developers to manually run a command disabling the unused servers at the start of every session.",
+        "C": "Remove the rarely used servers from configuration entirely, re-adding them only on the specific occasions they're needed.",
+        "D": "Scope which MCP servers are active on a per-project basis through project-level configuration, so each project loads only the servers it actually uses instead of every globally configured server."
+      },
+      "correct": "D",
+      "explanation": "The overhead comes from every session loading every configured server regardless of relevance, so making server activation a per-project decision means each project's context only carries the schemas it actually needs. Option A shrinks each server's footprint somewhat but doesn't address that unrelated servers are being loaded into every project at all — trimmed descriptions for tools a project never uses still add unnecessary tokens. Option B requires a manual step every single session, is easy to forget, and doesn't scale as more servers and more projects are added. Option C solves the overhead by sacrificing convenience — reconfiguring servers in and out on \"specific occasions\" reintroduces exactly the manual per-use setup that project-level scoping is meant to avoid.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.4",
+      "source": "ai"
+    },
+    {
+      "id": "ai-45",
+      "questionText": "A project's `.mcp.json` configures a GitHub MCP server with the token field set to `${GITHUB_TOKEN}`. Calls to the server started failing with 401 authentication errors after a new developer cloned the repo. Investigation shows `GITHUB_TOKEN` was never exported in that developer's shell profile or environment. What is the correct fix and explanation?",
+      "options": {
+        "A": "Ensure `GITHUB_TOKEN` is actually exported in the environment before Claude Code launches — for example in the shell profile or an environment file it loads — since `.mcp.json`'s `${...}` syntax expands from the process environment rather than from the repository itself.",
+        "B": "Hardcode the token value directly into `.mcp.json`, removing the dependency on environment variable expansion entirely.",
+        "C": "Move the MCP server configuration from `.mcp.json` to `~/.claude.json`, since user-level configuration doesn't rely on environment variable expansion.",
+        "D": "Add a fallback default token value inside `.mcp.json` so the server can authenticate even when the environment variable is unset."
+      },
+      "correct": "A",
+      "explanation": "`${GITHUB_TOKEN}` expansion pulls from whatever process environment Claude Code inherits when it starts — it isn't something the repository or `.mcp.json` itself can supply — so the actual defect is that this developer's shell never set the variable, and the fix is ensuring it's exported before launch. Option B works but reintroduces the exact problem `.mcp.json`'s env-var pattern exists to avoid: a real credential committed in plaintext to version control. Option C misdiagnoses the mechanism — user-level configuration uses the same `${...}` environment expansion syntax, so moving the config there doesn't change whether the variable is set in the developer's environment. Option D would mean the server silently authenticates with a shared fallback credential whenever any developer's environment is misconfigured, defeating the purpose of per-developer tokens and masking exactly the kind of misconfiguration this incident surfaced.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.4",
+      "source": "ai"
+    },
+    {
+      "id": "ai-46",
+      "questionText": "A developer-productivity agent needs to find every Python file in a codebase of thousands of files that imports a deprecated `requests_legacy` module. Which built-in tool approach is most appropriate?",
+      "options": {
+        "A": "Use `Bash` to run `find . -name \"*.py\"`, then use `Bash` again to run `grep` on each file the first command found.",
+        "B": "Use `Grep` to search for the import pattern directly across the codebase's Python files.",
+        "C": "Use `Glob` to enumerate all `.py` files, then use `Read` on each one to check whether it contains the import.",
+        "D": "Use `Read` on the project root to get a directory listing, then recursively `Read` each subdirectory to locate Python files."
+      },
+      "correct": "B",
+      "explanation": "`Grep` is the built-in tool designed for exactly this — searching file contents for a pattern across a whole codebase — and it does so in a single operation without needing separate enumeration and reading steps. Option A reaches for `Bash` shell commands to do content searching that the dedicated `Grep` tool already covers more directly and without shell-escaping concerns. Option C works but is far less efficient: opening and scanning every one of thousands of files individually with `Read` is exactly the exhaustive approach `Grep`'s pattern search is built to avoid. Option D uses `Read` for directory traversal, a use it isn't designed for, and would require manually walking the entire tree file by file.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.5",
+      "source": "ai"
+    },
+    {
+      "id": "ai-47",
+      "questionText": "While editing a YAML configuration file, `Edit` returns an error: \"Match not unique: found 4 occurrences of the target text,\" because the file contains four nearly-identical lines from repeated config blocks. What is the correct fallback approach?",
+      "options": {
+        "A": "Use `Bash` to run a `sed` command replacing all four occurrences of the target text simultaneously.",
+        "B": "Use `Write` to overwrite the entire file with a corrected version, composed from what `Read` returned, without first attempting a more targeted match.",
+        "C": "Use `Read` to view the file, identify enough surrounding context to distinguish the correct occurrence from the other three, and retry `Edit` with a larger `old_string` that is unique.",
+        "D": "Use `Edit` again, this time supplying a line-number parameter to target the correct occurrence."
+      },
+      "correct": "C",
+      "explanation": "The non-unique-match error means `old_string` isn't specific enough, so the correct next step is examining the file to find surrounding context — an adjacent comment, a different neighboring value — that makes the target text unique, then retrying `Edit` with that expanded anchor; this is surgical and touches only the intended line. Option A replaces all four occurrences identically, which is wrong whenever only one of the four repeated blocks was meant to change — exactly the situation the error is warning about. Option B jumps straight to a full-file rewrite when a more targeted retry hasn't even been attempted yet; it's a valid fallback only if a unique anchor still can't be found. Option D relies on a line-number parameter that `Edit` does not support — `Edit` matches on text content, not position.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.5",
+      "source": "ai"
+    },
+    {
+      "id": "ai-48",
+      "questionText": "A team needs to find every file in a project whose contents mention the string \"v2.3.1\", regardless of what the file is named. A teammate proposes using `Glob` with the pattern `\"*v2.3.1*\"`. What is the correct approach and why?",
+      "options": {
+        "A": "Use `Glob` with the pattern `\"*v2.3.1*\"` to match filenames containing the version string.",
+        "B": "Use `Read` on every file in the project to manually check whether \"v2.3.1\" appears in its contents.",
+        "C": "Use `Bash` to run `find` with a name pattern matching \"v2.3.1\".",
+        "D": "Use `Grep` to search file contents for the string \"v2.3.1\", since `Glob` matches file paths and names, not the text inside files."
+      },
+      "correct": "D",
+      "explanation": "The task is a content search — finding where a string appears inside files — and `Grep` is the tool built for that; `Glob` operates purely on path and filename patterns, so it would miss every file that mentions \"v2.3.1\" internally without having that string in its filename. Option A is the teammate's proposed approach and its exact flaw: files containing the version string in their contents, but not their names, simply won't match the glob pattern at all. Option B would eventually find every match, but reading every file in the project one at a time is precisely the exhaustive, unscoped scan that `Grep`'s content search avoids. Option C recreates option A's filename-based mismatch through `Bash`'s `find`, which by default also matches names rather than contents.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.5",
+      "source": "ai"
+    },
+    {
+      "id": "ai-49",
+      "questionText": "A build script shells out to `Bash`'s `find` to list every `.env.*` file across a monorepo containing hundreds of packages, every time it runs. A teammate suggests a built-in tool would be more appropriate for this. Which change is correct, and why?",
+      "options": {
+        "A": "Use `Glob` with a pattern like `\"**/.env.*\"` instead of shelling out to `Bash`'s `find`, since a built-in file-matching tool should be preferred over an equivalent `Bash` invocation when one is available.",
+        "B": "Use `Grep` to search for filenames matching `\".env.*\"` across the monorepo.",
+        "C": "Keep using `Bash`'s `find`, since it is functionally equivalent to any built-in alternative and is already implemented.",
+        "D": "Use `Read` on the monorepo's root directory and recursively enumerate matching files from what it returns."
+      },
+      "correct": "A",
+      "explanation": "`Glob` is the dedicated built-in for filename-pattern matching and directly covers this need; preferring it over an equivalent `Bash` invocation avoids constructing and escaping a shell command for something a purpose-built tool already does. Option B reaches for the content-search tool to solve a filename-matching problem — `Grep` searches inside files, not the names of files, so it isn't suited to this task. Option C is the status quo the teammate is flagging as suboptimal: functional equivalence to `Bash` is exactly why a dedicated tool is preferable when one exists, not a reason to keep the shell-based version. Option D relies on `Read` for directory traversal, which isn't a supported way to enumerate files and would require manual recursive walking that `Glob` already handles in one call.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.5",
+      "source": "ai"
+    },
+    {
+      "id": "ai-50",
+      "questionText": "A 50,000-line generated file needs a single-line change. A teammate suggests using `Write` to regenerate the entire file with the fix included. What is the most effective approach?",
+      "options": {
+        "A": "Use `Write` to regenerate the entire 50,000-line file with the corrected line included, as the teammate suggests.",
+        "B": "Use `Grep` to locate the specific line and its surrounding context first, then apply `Edit` with that context as a unique anchor, avoiding reading or rewriting the whole file.",
+        "C": "Use `Read` to load the full file into context, locate the line manually, and use `Write` to save the corrected version.",
+        "D": "Use `Bash` to run `sed` targeting the specific line number for the replacement."
+      },
+      "correct": "B",
+      "explanation": "Locating the target with `Grep` first, then applying a scoped `Edit`, changes only the one line that needs to change without ever loading or rewriting the other 49,999 — the efficient approach when only a single localized change is needed. Option A is the teammate's suggestion and its flaw directly: regenerating an entire 50,000-line file to change one line is a large, unnecessary rewrite with far more room for the regenerated content to drift from the original than a targeted edit. Option C is a smaller version of the same problem — it still pulls the entire 50,000-line file into context via `Read` before writing it back, when the file only needed to be searched, not fully loaded. Option D uses `Bash`'s `sed` for a task the built-in `Grep`-then-`Edit` combination already handles, and line-number targeting is brittle if the file's line numbers shift between when the target is identified and when the edit is applied.",
+      "domain": 2,
+      "domainName": "Tool Design &amp; MCP Integration",
+      "task": "2.5",
+      "source": "ai"
     }
   ]
 }
