@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "total": 50,
+  "total": 75,
   "questions": [
     {
       "id": "ai-1",
@@ -800,6 +800,406 @@
       "domain": 2,
       "domainName": "Tool Design &amp; MCP Integration",
       "task": "2.5",
+      "source": "ai"
+    },
+    {
+      "id": "ai-51",
+      "questionText": "A senior engineer at a fintech startup adds detailed API-versioning and error-handling conventions to their own `~/.claude/CLAUDE.md`. A new hire clones the repository, and Claude does not apply any of those conventions during their sessions. What is the most likely cause, and the fix?",
+      "options": {
+        "A": "The new hire's Claude Code version is outdated and doesn't support shared configuration files.",
+        "B": "`~/.claude/CLAUDE.md` is user-scoped and never committed to version control, so teammates never receive it; the conventions need to live in the project-level CLAUDE.md instead.",
+        "C": "CLAUDE.md files must be placed inside a `.claude/` subdirectory to be recognized; a root-level file is ignored.",
+        "D": "The configuration hierarchy requires the project-level file to explicitly `@import` from user-level files."
+      },
+      "correct": "B",
+      "explanation": "User-level configuration in `~/.claude/CLAUDE.md` lives on the individual engineer's machine and is never part of the repository, so it simply never reaches a teammate regardless of how they clone or configure anything; moving the conventions into the project-level file is what actually shares them. Option A invents a version-dependent limitation that isn't the mechanism at play — the issue is scope, not compatibility. Option C is false as stated: a root-level `CLAUDE.md` is a valid, recognized project-level location. Option D describes an `@import` requirement between user-level and project-level files that doesn't exist; user-level files are simply personal and out of scope for sharing, with or without imports.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.1",
+      "source": "ai"
+    },
+    {
+      "id": "ai-52",
+      "questionText": "A retailer's platform monorepo serves three storefront brands, each with its own design tokens, component naming conventions, and checkout flow rules, all documented inside one 550-line root `CLAUDE.md`. Developers report Claude frequently applies Brand A's component names while editing Brand C's storefront code. What is the best way to reorganize this configuration?",
+      "options": {
+        "A": "Create a separate `CLAUDE.md` in each brand's top-level directory and delete the root file entirely.",
+        "B": "Add clear section headers for each brand to the existing file, and use the `/memory` command to tell Claude which section to prioritize at the start of each session.",
+        "C": "Split the content into `.claude/rules/` files, one per brand, each with YAML frontmatter path-scoping matching that brand's directory tree, while keeping genuinely cross-brand conventions in the root file.",
+        "D": "Break the root file into per-brand topic files, but `@import` all three unconditionally into the root `CLAUDE.md`."
+      },
+      "correct": "C",
+      "explanation": "Path-scoped rule files load only when a file matching their glob is actually being edited, which directly stops Brand A's conventions from surfacing while working in Brand C's directory tree, while cross-brand rules stay centralized rather than duplicated three times. Option A removes the cross-contamination but also removes anywhere to put conventions genuinely shared across all three brands, forcing that shared content to be copied into each brand's file and drift over time. Option B still loads the entire 550 lines into every session and depends on the developer remembering to invoke `/memory` correctly each time — a manual step that doesn't scale and is easy to skip. Option D's unconditional `@import` still pulls every brand's rules into every session regardless of which brand's files are open, so the described bleed-through would continue exactly as before.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.1",
+      "source": "ai"
+    },
+    {
+      "id": "ai-53",
+      "questionText": "A monorepo has five backend services, each needing isolated, service-specific conventions. It also uses `.proto` files for shared API contracts — most live in a top-level `proto/` directory, but some are embedded inside individual services' own directory trees. The team wants each service's conventions isolated to that service, and a single consistent proto style guide applied to every `.proto` file no matter which directory it's in. What configuration achieves both goals?",
+      "options": {
+        "A": "Place the proto style guide in a `CLAUDE.md` inside the top-level `proto/` directory.",
+        "B": "Add the proto style guide to the root `CLAUDE.md` alongside general company-wide notes.",
+        "C": "`@import` the proto style guide into each of the five services' own `CLAUDE.md` files individually.",
+        "D": "Give each service a nested `CLAUDE.md` for its own conventions, and separately add a `.claude/rules/proto-style.md` file with frontmatter `paths: [\"**/*.proto\"]` so the proto conventions apply automatically wherever a `.proto` file lives."
+      },
+      "correct": "D",
+      "explanation": "The nested per-service files give each service its own isolated conventions, and a glob-based rule matching `**/*.proto` catches every proto file regardless of directory — including the ones embedded inside individual services — because it matches by file pattern rather than location. Option A only covers the top-level `proto/` directory; the proto files embedded inside individual services' trees fall outside that directory and would never see the style guide. Option B applies the proto guide unconditionally in every session, including ones editing files that aren't proto at all, reintroducing the same kind of irrelevant-content bleed the team is trying to avoid at the service level. Option C would technically work but requires the same import line to be added and kept in sync across five (and growing) separate files, which is more fragile to maintain than one glob-matched rule file that already reaches every location automatically.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.1",
+      "source": "ai"
+    },
+    {
+      "id": "ai-54",
+      "questionText": "A monorepo hosts three independently versioned client SDKs — Python, JavaScript, and Go — each with its own entirely separate style guide and no genuinely shared conventions between them. How should the CLAUDE.md configuration be organized?",
+      "options": {
+        "A": "Give each SDK its own nested `CLAUDE.md` containing only that SDK's conventions, and keep the root `CLAUDE.md` minimal, since there's no shared content worth centralizing.",
+        "B": "Consolidate all three SDKs' conventions into a single root `CLAUDE.md`, organized under clearly labeled sections for each language.",
+        "C": "Create a root `CLAUDE.md` that `@import`s each SDK's conventions file, even though none of the imported content is actually shared across SDKs.",
+        "D": "Use `.claude/rules/` files with `paths` frontmatter scoped by file extension (`**/*.py`, `**/*.go`, etc.) instead of nested per-SDK `CLAUDE.md` files."
+      },
+      "correct": "A",
+      "explanation": "When package boundaries are clean and there's genuinely nothing shared, a plain nested `CLAUDE.md` per package is the simplest structure that matches reality — each file holds exactly what applies to its SDK, and the root stays uncluttered because there's nothing legitimate to centralize. Option B recreates the original bleed-through risk this pattern exists to avoid: a 550-line-style monolith where conventions for one language sit adjacent to another's, inviting cross-contamination during editing. Option C adds an indirection layer — `@import` — whose entire purpose is centralizing shared content, but there's no shared content here, so it's extra structure that resolves to nothing useful. Option D reaches for the glob-matching mechanism meant for cross-cutting, non-directory-aligned conventions, when the actual boundary here is a clean, simple directory split that a plain nested file already handles without needing pattern matching.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.1",
+      "source": "ai"
+    },
+    {
+      "id": "ai-55",
+      "questionText": "A team's root `CLAUDE.md` `@import`s four topic files — testing.md, security.md, style.md, and deployment.md. Each of those four files independently also `@import`s a shared `company-baseline.md` containing general engineering principles. Developers notice the baseline content appears effectively four times over, and sessions consume noticeably more tokens than the visible file sizes suggest. What is the correct fix?",
+      "options": {
+        "A": "Remove `company-baseline.md` from all four topic files and don't import it anywhere, since none of the four strictly requires it.",
+        "B": "Import `company-baseline.md` once, from the root `CLAUDE.md`, and remove the duplicate imports from the four topic files.",
+        "C": "Merge the four topic files into a single large file, so there's only one place `company-baseline.md` needs to be imported from.",
+        "D": "Replace every `@import` in the configuration with `.claude/rules/` path-scoped files instead."
+      },
+      "correct": "B",
+      "explanation": "The baseline content is genuinely needed everywhere, so the fix is consolidating where it's imported from — once, at the root — rather than removing or restructuring it; this keeps every session's baseline coverage intact while eliminating the four-times-over duplication. Option A drops the baseline principles from every topic file's context entirely, which fixes the token bloat by removing content the team evidently still wants available. Option C merges four maintained, focused topic files back into one larger file purely to work around an import placement problem, undoing the modularity that motivated splitting them up in the first place. Option D discards a working, appropriate mechanism — `@import` is the correct tool for pulling in genuinely shared content like a company-wide baseline; the actual defect is where the import is placed, not which mechanism is used.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.1",
+      "source": "ai"
+    },
+    {
+      "id": "ai-56",
+      "questionText": "An infrastructure team wants a `/deploy-check` slash command that runs a standard pre-deployment checklist, and they want it available to every developer automatically the moment they clone or pull the repository. Where should this command file be created?",
+      "options": {
+        "A": "In `~/.claude/commands/` in each developer's home directory.",
+        "B": "Inside the project's root `CLAUDE.md` file, documented as an available command.",
+        "C": "In the `.claude/commands/` directory within the project repository.",
+        "D": "In a `.claude/config.json` file with a `commands` array listing it."
+      },
+      "correct": "C",
+      "explanation": "Project-scoped slash commands live in `.claude/commands/` inside the repository, so committing the file there means every developer gets it automatically the moment they clone or pull — exactly the stated requirement. Option A is personal, per-developer scope; each teammate would have to be told to create the same file themselves, which is the opposite of automatic team-wide availability. Option B is where project instructions and conventions live, not where command definitions are registered — CLAUDE.md text doesn't define an invocable slash command. Option D describes a configuration file and mechanism that doesn't exist for registering commands.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.2",
+      "source": "ai"
+    },
+    {
+      "id": "ai-57",
+      "questionText": "A `/audit-deps` skill inspects `package.json`, every lockfile, and dozens of transitive dependency trees before producing a security summary, generating hundreds of lines of intermediate tool output along the way. Teammates complain this output fills up their main conversation context every time they run it. Which frontmatter setting fixes this?",
+      "options": {
+        "A": "`allowed-tools: []`",
+        "B": "Move the skill file from `.claude/skills/` to `.claude/commands/`.",
+        "C": "`argument-hint: \"package-name\"`",
+        "D": "`context: fork`"
+      },
+      "correct": "D",
+      "explanation": "`context: fork` runs the skill's exploration in an isolated sub-agent context, so all the intermediate lockfile reads and dependency traces happen there and only the final security summary returns to the main session — directly solving the stated complaint. Option A would disable tool use entirely, but the skill's whole approach depends on reading files and tracing dependencies, so this breaks the skill rather than isolating its output. Option B changes what kind of file it is, not where its execution output goes; moving it to `.claude/commands/` doesn't isolate context on its own. Option C controls how the skill prompts for an input argument, which has nothing to do with where its intermediate tool output accumulates.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.2",
+      "source": "ai"
+    },
+    {
+      "id": "ai-58",
+      "questionText": "A developer wants a personal `/my-notes` command they use to jot scratch notes during their own sessions — it isn't something the rest of the team should receive when they clone the repository. Where should this command file be created?",
+      "options": {
+        "A": "In `~/.claude/commands/` in the developer's own home directory.",
+        "B": "In `.claude/commands/` within the project repository.",
+        "C": "In the project's root `CLAUDE.md` file.",
+        "D": "In `.claude/commands/`, added on a personal branch that is later merged into the shared repository."
+      },
+      "correct": "A",
+      "explanation": "User-level `~/.claude/commands/` is personal to the developer's own machine and is never distributed through the repository, which matches exactly what's wanted here — available to them, invisible to the team. Option B is the project-scoped location precisely meant for commands the whole team should receive automatically, the opposite of the stated \"not for the rest of the team\" requirement. Option C isn't where slash commands are registered at all; CLAUDE.md holds project instructions, not command definitions. Option D still ends with the command committed to the shared repository once merged, which is exactly the sharing the developer wants to avoid, regardless of which branch it started on.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.2",
+      "source": "ai"
+    },
+    {
+      "id": "ai-59",
+      "questionText": "A `/generate-migration` skill should only ever call `Write` and `Bash` (to run the migration generator) — it must never be able to call `Edit` on existing files, since accidentally modifying an already-applied migration would corrupt the schema history. How should this restriction be enforced?",
+      "options": {
+        "A": "Add a `CLAUDE.md` instruction telling Claude never to use `Edit` while running this skill.",
+        "B": "Set `allowed-tools` in the skill's frontmatter to only `Write` and `Bash`, excluding `Edit` entirely.",
+        "C": "Change the global permission settings so `Edit` requires manual approval for every tool call in every session.",
+        "D": "Remove the `Edit` tool from the project entirely, so no skill or command can use it."
+      },
+      "correct": "B",
+      "explanation": "Scoping `allowed-tools` on the skill itself makes `Edit` structurally unavailable during that skill's execution — a deterministic guarantee — while every other command or session in the project keeps full access to `Edit` as normal. Option A relies on the model reliably following a prompt-level instruction it could still fail to honor, which is exactly the probabilistic risk that a hard schema-corrupting mistake shouldn't be exposed to. Option C adds friction to every `Edit` call across the entire project, forcing manual approval even for legitimate uses in unrelated commands and sessions, which is a far broader change than the one skill needed. Option D eliminates `Edit` for the whole project, removing a tool other skills and everyday development work legitimately depend on, just to restrict one skill.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.2",
+      "source": "ai"
+    },
+    {
+      "id": "ai-60",
+      "questionText": "A large Vue frontend has single-file components scattered across dozens of nested feature folders. The team wants consistent `<script>`/`<style>` ordering conventions applied automatically to every `.vue` file, regardless of which folder it lives in. What is the most maintainable approach?",
+      "options": {
+        "A": "Consolidate the ordering conventions in the root `CLAUDE.md` under a \"Vue components\" header, relying on Claude to recognize when it's editing a `.vue` file.",
+        "B": "Create a skill in `.claude/skills/` containing the ordering conventions, to be invoked manually before editing any component.",
+        "C": "Create a rule file in `.claude/rules/` with YAML frontmatter specifying `paths: [\"**/*.vue\"]` and the ordering conventions.",
+        "D": "Place a separate `CLAUDE.md` file in every feature folder that contains `.vue` files."
+      },
+      "correct": "C",
+      "explanation": "A glob-scoped rule matching `**/*.vue` activates automatically for any component file regardless of its folder, giving exactly the location-independent, automatic coverage the team wants without manual steps. Option A depends on Claude inferring from a general header that this is the moment to apply Vue-specific ordering, which is inference rather than the deterministic matching a glob rule provides. Option B requires a developer to remember to invoke the skill manually every time before touching a component, which doesn't achieve \"applied automatically.\" Option D would require creating and maintaining a duplicate file in every one of the dozens of feature folders, and any folder someone forgets would silently fall outside the conventions.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.3",
+      "source": "ai"
+    },
+    {
+      "id": "ai-61",
+      "questionText": "A company runs database migrations inside a `migrations/` subdirectory within each of six independent backend services (e.g. `services/billing/migrations/`, `services/auth/migrations/`). They want migration-specific naming and rollback conventions to apply automatically to files in any of these six directories, without affecting the rest of each service's code. What is the correct approach?",
+      "options": {
+        "A": "Place a `CLAUDE.md` file inside each of the six `migrations/` subdirectories individually.",
+        "B": "Add the migration conventions to each service's own top-level `CLAUDE.md`, since migrations live within that service's directory tree.",
+        "C": "Add the migration conventions to the root `CLAUDE.md`, with an instruction to only apply them within `migrations/` folders.",
+        "D": "Create a single rule file in `.claude/rules/` with frontmatter `paths: [\"services/*/migrations/**\"]` covering the migration conventions."
+      },
+      "correct": "D",
+      "explanation": "A single glob like `services/*/migrations/**` matches every service's migrations directory in one rule, giving exactly the described scope — active in any of the six directories, inert everywhere else in each service — without maintaining six separate copies. Option A works but means creating and keeping six near-identical files in sync as conventions evolve, when one glob-based rule already covers all of them. Option B applies the migration conventions to every file in each service, not just the `migrations/` subdirectory, which is broader than the stated requirement of affecting only that subfolder. Option C relies on Claude inferring from prose which folder the instruction is scoped to, rather than the deterministic path-matching a frontmatter glob provides.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.3",
+      "source": "ai"
+    },
+    {
+      "id": "ai-62",
+      "questionText": "A data-pipeline package's pandas-specific conventions were set up as a rule in `.claude/rules/pandas-style.md` with frontmatter `paths: [\"**/*.py\"]`. The team notices those conventions are now also being applied in an unrelated ML-training package's Python files, which follow a different style entirely. What is the correct fix?",
+      "options": {
+        "A": "Narrow the glob to the data-pipeline package's own directory, e.g. `paths: [\"services/pipeline/**/*.py\"]`.",
+        "B": "Create a skill instead of a rule, so the pandas conventions are only applied when explicitly invoked.",
+        "C": "Add an instruction to the root `CLAUDE.md` asking Claude to infer, from file content, whether pandas conventions should apply.",
+        "D": "Split the single rule file into a separate `CLAUDE.md` placed in every subdirectory of the data-pipeline package."
+      },
+      "correct": "A",
+      "explanation": "The glob `**/*.py` matches every Python file in the repository, which is the actual defect — scoping it to the data-pipeline package's own path is a one-line fix that restores the intended boundary while keeping the automatic, deterministic activation the rule already provides. Option B trades automatic activation for a manual one, meaning developers now have to remember to invoke the skill in the one package where it should apply automatically — a worse outcome than the current bleed. Option C replaces a precise glob match with Claude guessing from file content, which is exactly the kind of unreliable inference a path-scoped rule was adopted to avoid. Option D solves the same overreach at a much heavier cost — abandoning a working rule mechanism to create and maintain a CLAUDE.md file per subdirectory, when tightening one frontmatter field already fixes it.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.3",
+      "source": "ai"
+    },
+    {
+      "id": "ai-63",
+      "questionText": "A team embeds this sentence in their monolithic root `CLAUDE.md`: \"When working with .sql files, use snake_case column names and always include a rollback comment.\" Developers still see inconsistent application — camelCase columns slip through, and the rollback comment is sometimes missing. What is the most effective fix?",
+      "options": {
+        "A": "Reword the sentence more emphatically and move it to the very top of the root `CLAUDE.md`.",
+        "B": "Move the SQL conventions into a `.claude/rules/` file with frontmatter `paths: [\"**/*.sql\"]`, so they activate deterministically whenever a `.sql` file is being edited, rather than relying on Claude noticing the prose condition.",
+        "C": "Add a single example of one correctly-formatted SQL file directly below the sentence in `CLAUDE.md`.",
+        "D": "Convert the sentence into a custom `/sql-check` slash command that developers run manually after editing SQL files."
+      },
+      "correct": "B",
+      "explanation": "The current setup relies on Claude recognizing, from a prose condition buried in a general file, that a given edit warrants the SQL rule — a glob-scoped rule file removes that inference entirely by activating automatically and only for `.sql` files, which is what deterministic, consistent enforcement requires. Option A keeps the enforcement mechanism exactly the same — a conditional sentence Claude must notice applies — and stronger wording doesn't change whether that recognition happens reliably. Option C is a genuinely useful addition for showing correct formatting, but an example next to a still-conditional sentence doesn't fix the underlying issue that the condition itself isn't reliably triggering. Option D turns automatic, in-the-moment enforcement into an easily-skipped manual step performed after the fact, which is a worse guarantee than the automatic rule provides.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.3",
+      "source": "ai"
+    },
+    {
+      "id": "ai-64",
+      "questionText": "A team is migrating a REST API with 40 endpoints to GraphQL, which requires decisions about schema design, resolver batching strategy, and how existing REST-only business logic maps onto GraphQL types. Which approach should the developer take?",
+      "options": {
+        "A": "Begin direct execution, converting the simplest endpoint first, and let the schema shape emerge from what gets implemented.",
+        "B": "Begin direct execution with comprehensive upfront written instructions describing exactly how every resolver should be structured.",
+        "C": "Enter plan mode to explore the existing REST API's business logic and dependencies, and design the GraphQL schema and resolver strategy before implementing.",
+        "D": "Begin direct execution and switch to plan mode only if unexpected complexity is discovered partway through."
+      },
+      "correct": "C",
+      "explanation": "This task already involves architectural decisions across dozens of endpoints — schema shape, batching strategy, business-logic mapping — which is exactly the profile plan mode is designed for: exploring and deciding before committing to an implementation. Option A risks the schema being shaped by whichever endpoint happened to be converted first, rather than a deliberate design, and rework when later endpoints don't fit that ad hoc shape. Option B assumes the developer already has the correct resolver structure fully worked out without having explored the existing business logic — precisely the exploration plan mode exists to do first. Option D ignores that the complexity here isn't a surprise waiting to be discovered — it's already stated in the task itself, so there's no reason to defer planning until direct execution stumbles into it.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.4",
+      "source": "ai"
+    },
+    {
+      "id": "ai-65",
+      "questionText": "A developer asks Claude Code to fix a typo in a single user-facing error message string (\"Ivalid\" → \"Invalid\") in one known file. The correct text and its location are both already known. Should they use plan mode or direct execution?",
+      "options": {
+        "A": "Plan mode, since any text change in a user-facing string could have unforeseen downstream effects worth exploring first.",
+        "B": "Plan mode, so Claude can search the codebase first and rule out other files containing the same typo before making the fix.",
+        "C": "Direct execution first, followed by a quick plan mode pass afterward to confirm no other effects were introduced.",
+        "D": "Direct execution, since the task is a single, well-scoped, unambiguous change requiring no architectural decisions or multi-file analysis."
+      },
+      "correct": "D",
+      "explanation": "The fix, its location, and its correctness are all already known, with no architectural decision or multi-file analysis involved — exactly the profile direct execution is suited for. Option A applies an overly cautious heuristic to a change with no realistic unforeseen downstream effect, treating every text edit as though it carries the same risk as a structural change. Option B describes a reasonable extra step (checking for the same typo elsewhere), but that's a small supplementary search, not a reason to route a one-line, already-located fix through full plan mode. Option C inverts the correct workflow — plan mode is for exploring and deciding before acting, not for a post-hoc scan tacked onto the end of a task that had no open decisions to begin with.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.4",
+      "source": "ai"
+    },
+    {
+      "id": "ai-66",
+      "questionText": "A developer is using plan mode to scope a framework upgrade for a large, decade-old PHP codebase. Exploration generates dozens of full file reads, dependency traces, and search results, and the developer notices the main conversation's context filling up quickly, threatening to exhaust the budget before the plan is even finished. What is the most appropriate technique?",
+      "options": {
+        "A": "Use the Explore subagent to perform the verbose discovery work and return a structured summary to the main session, rather than letting raw tool output accumulate there.",
+        "B": "Switch to direct execution partway through, so fewer tool calls are needed overall.",
+        "C": "Run `/compact` after every individual tool call throughout the exploration.",
+        "D": "Restrict exploration to only the codebase's entry-point files, to reduce the volume of tool calls."
+      },
+      "correct": "A",
+      "explanation": "The Explore subagent isolates verbose discovery work in its own context and returns only a structured summary to the main session, which is exactly what prevents the raw file reads and dependency traces from consuming the main conversation's budget. Option B abandons the architectural planning this upgrade genuinely needs, trading a context problem for an under-informed implementation. Option C is operationally impractical at the described volume — compacting after every single tool call adds constant overhead and risks discarding exploration detail the plan still needs, rather than solving the root accumulation problem. Option D artificially caps what gets explored, which for a decade-old, unfamiliar codebase risks producing an incomplete plan that misses dependencies outside the entry points.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.4",
+      "source": "ai"
+    },
+    {
+      "id": "ai-67",
+      "questionText": "A developer begins direct execution on \"add rate limiting to the public API,\" expecting a small, contained change. Partway through, they discover the API is actually three separate services, each needing rate limiting against a different backing store (Redis, in-memory, and a third-party gateway), with no existing shared pattern between them. What should the developer do?",
+      "options": {
+        "A": "Continue direct execution to completion, since backing out now would waste the exploration already done on the first service.",
+        "B": "Pause direct execution now that the multi-service architectural scope is apparent, and enter plan mode to design a consistent rate-limiting approach across all three backing stores, using what's already been learned as input.",
+        "C": "Revert all changes made so far and restart the entire task from scratch in plan mode before writing any code.",
+        "D": "Finish quickly by applying whatever pattern was used for the first service uniformly to the other two, without further analysis."
+      },
+      "correct": "B",
+      "explanation": "The scope has changed from a contained task to one requiring an architectural decision across three genuinely different backing stores, and pausing to plan — while keeping what's already been learned from the first service — is the appropriate response the moment that becomes clear, rather than either powering through or discarding useful progress. Option A keeps making per-service design decisions live, one at a time, in direct execution, which is exactly the risk plan mode exists to prevent once multiple valid approaches and cross-service consistency are at stake. Option C throws away the genuinely useful discovery already made about the first service, forcing plan mode to rediscover it rather than building on it. Option D applies a pattern proven for one specific backing store to two others without checking whether it's actually compatible with an in-memory store or a third-party gateway's constraints — the kind of premature generalization the discovered complexity should have stopped.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.4",
+      "source": "ai"
+    },
+    {
+      "id": "ai-68",
+      "questionText": "A developer asks Claude Code to normalize phone numbers to E.164 format during a customer-database migration. After two attempts using the prose instruction \"always format as E.164,\" output remains inconsistent — some numbers keep a leading `0`, others are missing the country code entirely. What technique is most likely to resolve this?",
+      "options": {
+        "A": "Rewrite the instruction with stronger emphasis and repetition.",
+        "B": "Switch to plan mode so Claude can explore how phone numbers are stored before formatting them.",
+        "C": "Provide 2-3 concrete input/output examples covering edge cases like leading zeros, missing country codes, and already-correct numbers.",
+        "D": "Ask Claude to write a formatting function first, then apply it in a separate pass."
+      },
+      "correct": "C",
+      "explanation": "Concrete input/output examples covering the specific edge cases already observed — leading zeros, missing country codes — make the exact expected transformation unambiguous in a way \"always format as E.164\" isn't, especially after two prose-only attempts already failed to resolve the same inconsistency. Option A repeats the same underlying instruction with more emphasis, which doesn't add the missing information about how edge cases should specifically be handled. Option B is suited to architectural or exploratory uncertainty, not a formatting-consistency problem that's already narrowly defined. Option D adds an intermediate step but doesn't specify what the function's edge-case behavior should actually be, so the same ambiguity that caused inconsistent output could just as easily produce an inconsistent function.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.5",
+      "source": "ai"
+    },
+    {
+      "id": "ai-69",
+      "questionText": "A developer finds a caching bug where two issues interact — a cache-key collision and a stale TTL setting both affect the same cached value, and only produce wrong output when both are present together — plus three unrelated, non-interacting variable-naming inconsistencies scattered across other files. How should these five issues be addressed using iterative refinement?",
+      "options": {
+        "A": "Report all five issues in a single message so Claude has full context to resolve everything at once.",
+        "B": "Fix all three naming issues first since they're simpler, then address the two interacting caching issues together in one message.",
+        "C": "Address each of the five issues in five separate sequential messages, verifying each before moving to the next.",
+        "D": "Send the two interacting caching issues together in one message so Claude can resolve them with full context on both, then address the three naming issues sequentially in separate follow-up messages, verifying each fix."
+      },
+      "correct": "D",
+      "explanation": "Whether to batch or sequence depends on interaction: the two caching issues only produce correct behavior when fixed with awareness of each other, so they belong in one message together, while the three independent naming issues are exactly the case sequential iteration suits, verifying each in isolation. Option A lumps the three unrelated naming fixes in with the two interacting bugs, adding noise to the message where Claude most needs focused context on just the cache-key and TTL interaction. Option B reorders by simplicity rather than by interaction, and doing the naming fixes first provides no benefit while still requiring the two caching issues to eventually be batched together anyway. Option C splits the two interacting caching issues into separate messages, risking a fix for one that doesn't account for the other and produces an incomplete or incorrect resolution of the interacting pair.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.5",
+      "source": "ai"
+    },
+    {
+      "id": "ai-70",
+      "questionText": "A team wants to add multi-tenancy to an existing single-tenant SaaS application built by developers no longer with the company, whose data-isolation patterns and assumptions about single-tenant state are unfamiliar to the current developer. Before any implementation, they want Claude to surface design considerations they may not have anticipated. What is the most appropriate technique?",
+      "options": {
+        "A": "Use the interview pattern: ask Claude to question the developer about the existing data model, tenant-isolation requirements, and unfamiliar assumptions baked into the codebase, before proposing any design.",
+        "B": "Ask Claude to implement a standard multi-tenancy pattern for the framework directly, then review the output for compatibility issues.",
+        "C": "Provide the application's main entry-point files and ask Claude to produce a multi-tenancy design document for review.",
+        "D": "Start with a minimal proof-of-concept limited to one feature, and iterate based on issues found during testing."
+      },
+      "correct": "A",
+      "explanation": "The interview pattern is built for exactly this situation — surfacing assumptions and design considerations the developer hasn't yet thought to specify — which matters most here given the unfamiliar, undocumented isolation patterns left behind by developers no longer on the team. Option B proceeds with a generic pattern that may directly conflict with this specific application's existing, unfamiliar assumptions about single-tenant state, discovering incompatibilities only after the fact. Option C produces a document from what Claude can infer from entry-point files alone, but it doesn't interactively draw out constraints and assumptions the developer hasn't surfaced — a one-way document generation rather than a dialogue. Option D defers discovering the unfamiliar isolation assumptions until testing failures reveal them, which is a costlier time to find fundamental design issues than before any code is written.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.5",
+      "source": "ai"
+    },
+    {
+      "id": "ai-71",
+      "questionText": "A DBA has already fully specified an index to add to a table — exact column, index type, and the precise `CREATE INDEX` statement to use. The developer asks Claude Code to add this pre-specified migration. Should they use the interview pattern before implementing?",
+      "options": {
+        "A": "Yes, since the interview pattern surfaces considerations before any implementation begins, regardless of how well-specified the task appears.",
+        "B": "No — the interview pattern is for surfacing unanticipated design considerations in ambiguous or unfamiliar situations; this task is already fully specified with no open design questions, so direct execution is appropriate.",
+        "C": "Yes, because index changes can have unanticipated performance effects that only an interview can surface.",
+        "D": "No, but a design document should still be generated first to confirm the DBA's specification is correct."
+      },
+      "correct": "B",
+      "explanation": "The interview pattern exists to surface considerations the requester hasn't anticipated, but here the DBA has already made every relevant decision — column, index type, exact statement — leaving nothing ambiguous for an interview to uncover, so direct execution is the appropriate, unnecessary-overhead-free choice. Option A treats the interview pattern as a blanket first step regardless of specification completeness, which misapplies a technique meant for ambiguity to a task that has none. Option C raises a genuine category of concern, but performance effects of a specific, DBA-approved index aren't something an interview with Claude — which lacks the production query patterns and data volume the DBA already accounted for — is positioned to surface. Option D adds a design-document step to re-derive what the DBA has already specified, which is redundant verification work rather than iterative refinement of an ambiguous task.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.5",
+      "source": "ai"
+    },
+    {
+      "id": "ai-72",
+      "questionText": "A CI job runs `claude \"Summarize this pull request's changes for the release notes\"` and hangs indefinitely; logs show Claude Code waiting for interactive input. What is the correct fix?",
+      "options": {
+        "A": "Set an environment variable `CLAUDE_HEADLESS=true` before running the command.",
+        "B": "Add a `--batch` flag to the command.",
+        "C": "Add the `-p` (print) flag: `claude -p \"Summarize this pull request's changes for the release notes\"`.",
+        "D": "Redirect stdin from `/dev/null`."
+      },
+      "correct": "C",
+      "explanation": "The `-p` (or `--print`) flag is the documented way to run Claude Code non-interactively, which is exactly what a CI job needs since there's no human present to provide interactive input. Option A references an environment variable that doesn't exist as a supported mechanism for this. Option B references a `--batch` flag that isn't a real Claude Code option. Option D is a Unix-level workaround that doesn't address the actual cause — Claude Code is waiting for interactive mode to be explicitly disabled, not merely for stdin to be empty.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.6",
+      "source": "ai"
+    },
+    {
+      "id": "ai-73",
+      "questionText": "A CI pipeline runs Claude Code to review pull requests. Reviewers notice it repeatedly suggests renaming variables to more \"conventional\" names that intentionally match an external vendor API's exact field names — a documented, deliberate exception — wasting review time as reviewers reject the same class of suggestion on nearly every PR. What most directly fixes this?",
+      "options": {
+        "A": "Add a post-processing script to the pipeline that filters out any suggestion matching a rename pattern.",
+        "B": "Switch the output format so suggestions are grouped by category, making vendor-name exceptions easier for reviewers to skip.",
+        "C": "Add stricter instructions telling Claude, in the prompt, not to suggest any variable renames at all.",
+        "D": "Document the vendor-field-name exception and its rationale in `CLAUDE.md`, so Claude has the missing context up front and doesn't flag intentionally vendor-matching names as violations."
+      },
+      "correct": "D",
+      "explanation": "The root cause is that Claude doesn't know the vendor-matching names are a deliberate, documented exception, so giving it that context directly in `CLAUDE.md` prevents the suggestion from being generated in the first place, rather than managing it after the fact. Option A filters symptoms after generation and adds pipeline complexity that has to be maintained as the exception list changes, without addressing why Claude keeps flagging it. Option B makes the noise easier to skim past but doesn't reduce the wasted review time the recurring, incorrect suggestions themselves cause. Option C overcorrects by suppressing all rename suggestions, which would also silence genuinely useful renaming feedback that has nothing to do with the vendor exception.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.6",
+      "source": "ai"
+    },
+    {
+      "id": "ai-74",
+      "questionText": "A CI bot posts inline security findings on pull requests, requiring `file`, `line`, and `severity` for each finding. Output is currently unstructured text parsed by a regex, which breaks whenever Claude's phrasing shifts between runs. What is the most robust fix?",
+      "options": {
+        "A": "Use `--output-format json` combined with `--json-schema` defining `file`, `line`, and `severity` fields, so each finding is machine-parseable by construction.",
+        "B": "Add stricter formatting instructions to the prompt specifying the exact text layout expected, with validation to reject non-conforming responses.",
+        "C": "Add a second Claude call that normalizes the first response into a consistent structured format.",
+        "D": "Switch to a single summary comment instead of per-line findings, avoiding the need for line-level parsing."
+      },
+      "correct": "A",
+      "explanation": "Schema-constrained JSON output guarantees the `file`, `line`, and `severity` fields are present and correctly shaped by construction, eliminating the regex layer and the phrasing drift that keeps breaking it. Option B still relies on Claude consistently reproducing an exact free-text layout across runs, which is the same underlying fragility that caused the original breakage, just with stricter wording. Option C adds a second API call, extra latency, and cost to normalize output that a schema would have produced correctly the first time. Option D changes what the feature does — abandoning per-line findings — rather than fixing the actual parsing problem, and loses the line-level precision the CI review was designed to provide.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.6",
+      "source": "ai"
+    },
+    {
+      "id": "ai-75",
+      "questionText": "A CI pipeline runs Claude Code to review pull requests for \"block\"-severity issues and relies on the process's exit code to decide whether to fail the build. The build never fails, even on PRs with severe findings, because the Claude Code process completes its response and exits 0 regardless of what the review actually concluded. What is the correct fix?",
+      "options": {
+        "A": "Instruct Claude, in the prompt, to explicitly call `exit(1)` whenever it finds a block-severity issue.",
+        "B": "Use `--output-format json` with a schema including a `severity` or `verdict` field, and have the CI script parse that JSON and fail the build itself when the field indicates a blocking issue, rather than relying on the CLI process's own exit code.",
+        "C": "Run the pipeline step twice, failing the build if the two runs' outputs differ, as a proxy for uncertain or severe findings.",
+        "D": "Increase the strictness of the prompt so Claude is more likely to phrase severe findings with alarming language the pipeline can grep for."
+      },
+      "correct": "B",
+      "explanation": "The process's own exit code reflects whether the CLI run completed successfully, not what the review concluded, so the fix is having the pipeline itself read a structured severity field and decide pass/fail — moving the gating logic to where the actual finding is represented. Option A asks the model to control an external process's exit status from inside its own text generation, which isn't something Claude can actually do — a language model producing a response doesn't set the calling process's exit code. Option C uses output divergence between two runs as an indirect, unreliable proxy for severity that has no established relationship to whether a finding is actually block-level. Option D relies on grepping for phrasing the model happens to use, reintroducing the exact fragile-text-parsing problem structured output is meant to eliminate.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration &amp; Workflows",
+      "task": "3.6",
       "source": "ai"
     }
   ]
