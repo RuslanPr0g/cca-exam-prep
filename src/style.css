@@ -122,14 +122,12 @@ body {
   align-items: center;
   gap: .5rem;
   font-weight: 700;
-  font-size: .9rem;
+  font-size: .8rem;
   flex: 1 1 auto;
 }
 
-.logo { font-size: 1.25rem; }
-
 .stats {
-  font-size: .74rem;
+  font-size: .66rem;
   color: var(--text-muted);
   display: flex;
   gap: .9rem;
@@ -158,7 +156,7 @@ body {
   border-radius: 999px;
   color: var(--text-muted);
   font-weight: 600;
-  font-size: .7rem;
+  font-size: .62rem;
   letter-spacing: .2px;
   background: rgba(255, 255, 255, .05);
   backdrop-filter: blur(10px);
@@ -214,7 +212,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   padding: .65rem 1.5rem;
   border-radius: 10px;
   font-weight: 600;
-  font-size: .85rem;
+  font-size: .76rem;
   box-shadow: 0 8px 24px rgba(108,127,255,.35);
   transition: transform .15s ease, box-shadow .15s ease;
 }
@@ -234,7 +232,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: .4rem .85rem;
-  font-size: .74rem;
+  font-size: .66rem;
   transition: color .15s, border-color .15s, background .15s;
 }
 .btn-ghost:hover { color: var(--text); border-color: var(--primary); background: rgba(255,255,255,.1); }
@@ -269,9 +267,9 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   padding: 2.5rem 2rem;
   max-width: 480px;
 }
-.big-emoji { font-size: 3.4rem; margin-bottom: .5rem; }
-.empty-state h2 { font-size: 1.35rem; margin-bottom: .5rem; }
-.empty-state p  { font-size: .9rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+.big-emoji { font-size: 2.8rem; margin-bottom: .5rem; }
+.empty-state h2 { font-size: 1.15rem; margin-bottom: .5rem; }
+.empty-state p  { font-size: .8rem; color: var(--text-muted); margin-bottom: 1.5rem; }
 
 .empty-actions {
   display: flex;
@@ -331,12 +329,12 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 }
 
 .q-position {
-  font-size: .7rem;
+  font-size: .62rem;
   color: var(--text-muted);
 }
 
 .q-label {
-  font-size: .7rem;
+  font-size: .62rem;
   font-weight: 600;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -348,7 +346,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 
 .bookmark {
   background: transparent;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   line-height: 1;
   color: var(--text-muted);
   transition: color .15s, transform .15s;
@@ -359,7 +357,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 .bookmark.is-hard { color: var(--warn); text-shadow: 0 0 10px rgba(251,191,36,.5); }
 
 .question-text {
-  font-size: .92rem;
+  font-size: .82rem;
   font-weight: 500;
   line-height: 1.55;
   margin-bottom: 1rem;
@@ -384,7 +382,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   padding: .65rem .9rem;
   text-align: left;
   color: var(--text);
-  font-size: .82rem;
+  font-size: .74rem;
   line-height: 1.45;
   transition: background .14s, border-color .14s, transform .1s;
   cursor: pointer;
@@ -404,7 +402,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   background: rgba(255,255,255,.1);
   color: var(--text-muted);
   font-weight: 700;
-  font-size: .7rem;
+  font-size: .62rem;
   display: flex; align-items: center; justify-content: center;
   transition: background .14s, color .14s;
   margin-top: 1px;
@@ -450,14 +448,14 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 
 .feedback-header {
   font-weight: 700;
-  font-size: .86rem;
+  font-size: .78rem;
   margin-bottom: .4rem;
 }
 .feedback-header.ok  { color: var(--success); text-shadow: 0 0 10px rgba(74,222,128,.5); }
 .feedback-header.bad { color: var(--error);   text-shadow: 0 0 10px rgba(248,113,113,.5); }
 
 .feedback-explanation {
-  font-size: .8rem;
+  font-size: .72rem;
   color: var(--text-muted);
   line-height: 1.55;
   margin-bottom: .75rem;
@@ -467,9 +465,9 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 @media (max-width: 520px) {
   .brand-name { display: none; }
   .card { padding: 1rem 1.1rem; }
-  .question-text { font-size: .86rem; margin-bottom: .8rem; }
-  .option-btn { font-size: .78rem; padding: .55rem .8rem; }
+  .question-text { font-size: .78rem; margin-bottom: .8rem; }
+  .option-btn { font-size: .7rem; padding: .55rem .8rem; }
   .tab-bar { gap: .35rem; }
-  .tab-btn { padding: .35rem .7rem; font-size: .66rem; }
+  .tab-btn { padding: .35rem .7rem; font-size: .58rem; }
   #main { padding: .75rem 1rem 1.25rem; }
 }
