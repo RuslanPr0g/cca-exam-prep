@@ -1,7 +1,14 @@
 // ── Storage keys ──────────────────────────────────────────────────────────────
 const KEY_CORRECT   = 'quiz_correct';    // Set of question IDs answered correctly
 const KEY_HARD      = 'quiz_hard';       // Set of question IDs marked as hard
-const KEY_HARD_MODE = 'quiz_hard_mode';  // BUG-16: persist hard mode toggle
+const KEY_TAB       = 'quiz_tab';        // persisted active tab (see VALID_TABS below)
+
+// A single enum of the four question sets replaces two independent booleans
+// (hard mode x source). Two orthogonal toggles produce combinations that are
+// easy to leave inconsistent (e.g. a stale message from one toggle's branch
+// after switching the other); one tab value has no such cross-product to get
+// out of sync.
+export const VALID_TABS = ['standard', 'standard-hard', 'ai', 'ai-hard'];
 
 // ── In-memory cache (BUG-08) ──────────────────────────────────────────────────
 // Avoids redundant JSON.parse on every read within the same interaction.
@@ -89,29 +96,42 @@ export function buildQueue(questions) {
 export function resetAll() {
   localStorage.removeItem(KEY_CORRECT);
   localStorage.removeItem(KEY_HARD);
-  localStorage.removeItem(KEY_HARD_MODE);
+  localStorage.removeItem(KEY_TAB);
   // Bust cache
   _cacheCorrect = null;
   _cacheHard    = null;
 }
 
-/** Stats snapshot for the header. */
-export function getStats(allQuestions) {
+/**
+ * Stats snapshot for the header, scoped to the given question set.
+ * Counts must be filtered to `questions` (not read as global set sizes) —
+ * otherwise progress from one source (e.g. standard) leaks into another
+ * source's stats (e.g. AI-generated) since correct/hard ids are stored in a
+ * single shared localStorage set across all sources.
+ */
+export function getStats(questions) {
   const correct = getCorrectIds();
   const hard    = getHardIds();
+  let done = 0;
+  let hardCount = 0;
+  for (const q of questions) {
+    if (correct.has(q.id)) done++;
+    if (hard.has(q.id))    hardCount++;
+  }
   return {
-    total:   allQuestions.length,
-    done:    correct.size,
-    hard:    hard.size,
-    pending: allQuestions.length - correct.size,
+    total:   questions.length,
+    done,
+    hard:    hardCount,
+    pending: questions.length - done,
   };
 }
 
-// ── Hard mode persistence (BUG-16) ───────────────────────────────────────────
-export function getPersistedHardMode() {
-  return localStorage.getItem(KEY_HARD_MODE) === '1';
+// ── Active tab persistence (BUG-16) ──────────────────────────────────────────
+export function getPersistedTab() {
+  const value = localStorage.getItem(KEY_TAB);
+  return VALID_TABS.includes(value) ? value : 'standard';
 }
 
-export function setPersistedHardMode(value) {
-  localStorage.setItem(KEY_HARD_MODE, value ? '1' : '0');
+export function setPersistedTab(tab) {
+  localStorage.setItem(KEY_TAB, tab);
 }

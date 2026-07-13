@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "total": 1,
+  "questions": [
+    {
+      "id": "ai-1",
+      "questionText": "[PLACEHOLDER] Your agentic system occasionally calls a tool with a malformed argument that passes schema validation but fails at runtime. What is the most robust way to handle this?",
+      "options": {
+        "A": "Wrap tool execution in a runtime validation layer that checks semantic constraints beyond the schema, and return structured errors the agent can react to.",
+        "B": "Ask the user to rephrase their request until the tool call succeeds.",
+        "C": "Silently retry the same tool call up to three times.",
+        "D": "Disable the tool entirely until a developer manually reviews the logs."
+      },
+      "correct": "A",
+      "explanation": "Schema validation only guarantees shape, not semantic correctness. A runtime validation layer catches constraint violations schemas can't express, and returning structured errors lets the agent self-correct instead of failing silently or looping.",
+      "domain": 6,
+      "domainName": "AI-Generated Custom Questions",
+      "task": "AI-1",
+      "source": "ai"
+    }
+  ]
+}

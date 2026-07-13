@@ -1,7 +1,7 @@
 /**
  * Tests for src/store.js
  * Covers: BUG-01/02 (toggleHardQuestion rename + return), BUG-08 (cache),
- *         BUG-16 (hard mode persistence), BUG-17 (shuffle/buildQueue)
+ *         BUG-16 (active tab persistence), BUG-17 (shuffle/buildQueue)
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
@@ -15,8 +15,8 @@ import {
   buildQueue,
   resetAll,
   getStats,
-  getPersistedHardMode,
-  setPersistedHardMode,
+  getPersistedTab,
+  setPersistedTab,
 } from '../store.js';
 
 // ── localStorage mock ─────────────────────────────────────────────────────────
@@ -216,10 +216,10 @@ describe('resetAll', () => {
     expect(getHardIds().size).toBe(0);
   });
 
-  it('removes hard mode preference (BUG-16)', () => {
-    setPersistedHardMode(true);
+  it('removes active tab preference (BUG-16)', () => {
+    setPersistedTab('ai-hard');
     resetAll();
-    expect(getPersistedHardMode()).toBe(false);
+    expect(getPersistedTab()).toBe('standard');
   });
 });
 
@@ -239,20 +239,26 @@ describe('getStats', () => {
   });
 });
 
-// ── BUG-16: hard mode persistence ────────────────────────────────────────────
-describe('BUG-16 hard mode persistence', () => {
-  it('getPersistedHardMode returns false by default', () => {
-    expect(getPersistedHardMode()).toBe(false);
+// ── BUG-16: active tab persistence ───────────────────────────────────────────
+describe('BUG-16 active tab persistence', () => {
+  it('getPersistedTab defaults to "standard"', () => {
+    expect(getPersistedTab()).toBe('standard');
   });
 
-  it('setPersistedHardMode(true) persists across reads', () => {
-    setPersistedHardMode(true);
-    expect(getPersistedHardMode()).toBe(true);
+  it('setPersistedTab persists across reads', () => {
+    setPersistedTab('ai');
+    expect(getPersistedTab()).toBe('ai');
   });
 
-  it('setPersistedHardMode(false) stores false', () => {
-    setPersistedHardMode(true);
-    setPersistedHardMode(false);
-    expect(getPersistedHardMode()).toBe(false);
+  it('falls back to "standard" for an invalid/corrupted stored value', () => {
+    localStorage.setItem('quiz_tab', 'not-a-real-tab');
+    expect(getPersistedTab()).toBe('standard');
+  });
+
+  it('round-trips every valid tab', () => {
+    for (const tab of ['standard', 'standard-hard', 'ai', 'ai-hard']) {
+      setPersistedTab(tab);
+      expect(getPersistedTab()).toBe(tab);
+    }
   });
 });

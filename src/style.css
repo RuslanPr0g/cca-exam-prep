@@ -1,29 +1,98 @@
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Must win over any explicit `display` rule below (e.g. `.screen.center`) —
+   author rules always beat the browser's built-in `[hidden]{display:none}`
+   regardless of specificity, so without `!important` here, elements with the
+   native `hidden` attribute still render once our own stylesheet loads. */
+[hidden] { display: none !important; }
+
 :root {
-  --bg:          #0f1117;
-  --surface:     #1a1d27;
-  --surface-alt: #22263a;
-  --border:      #2e3250;
+  --surface:     rgba(28, 30, 48, .55);
+  --surface-alt: rgba(255, 255, 255, .06);
+  --border:      rgba(255, 255, 255, .12);
   --primary:     #6c7fff;
   --primary-h:   #8a96ff;
-  --success:     #34d399;
+  --success:     #4ade80;
   --error:       #f87171;
   --warn:        #fbbf24;
-  --text:        #e2e8f0;
-  --text-muted:  #8892a4;
-  --radius:      12px;
-  --shadow:      0 4px 24px rgba(0,0,0,.45);
+  --text:        #f5f7ff;
+  --text-muted:  rgba(245, 247, 255, .6);
+  --ai-accent:   #e879c9;
+  --radius:      16px;
+  --shadow:      0 10px 40px rgba(0,0,0,.5);
+  --blur:        16px;
   font-size: 16px;
 }
 
+html, body {
+  height: 100%;
+}
+
 body {
-  background: var(--bg);
   color: var(--text);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.6;
   min-height: 100dvh;
+}
+
+/* ── Space background ─────────────────────────────────────────────────────── */
+.space {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at bottom, #1a1c3f 0%, #05060f 100%);
+  overflow: hidden;
+  /* Explicit (non-negative) z-index — needed because .space and #app fade in
+     on different opacity-transition durations. Any element with opacity != 1
+     briefly forms its own stacking context, so while one is still mid-fade
+     after the other has settled at opacity:1, relying on DOM order alone let
+     the stacking order visibly wobble for a frame. Pinning both z-indexes
+     keeps the order stable throughout the animation.
+     (A *negative* z-index here made this element's whole subtree fail to
+     render in Chrome when it's a position:fixed child of body with no other
+     stacking context in between — confirmed by testing: invisible at -1,
+     visible at 0. Stick to 0 or higher.) */
+  z-index: 0;
+}
+
+/* Always above .space, pinned for the same reason (see .space comment). */
+#app {
+  position: relative;
+  z-index: 1;
+}
+
+.star {
+  position: absolute;
+  background: #fff;
+  border-radius: 50%;
+  opacity: .8;
+  box-shadow: 0 0 4px #fff, 0 0 8px rgba(255,255,255,.8);
+  animation: twinkle linear infinite;
+  will-change: opacity;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: .5; }
+  50%      { opacity: 1; }
+}
+
+.shooting-star {
+  position: absolute;
+  width: 2px;
+  height: 80px;
+  background: linear-gradient(#fff, transparent);
+  transform: rotate(135deg);
+  opacity: 0;
+  animation: shoot linear infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes shoot {
+  0%   { transform: translate(0, 0) rotate(135deg); opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translate(700px, 700px) rotate(135deg); opacity: 0; }
 }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
@@ -31,9 +100,11 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(15,17,23,.85);
-  backdrop-filter: blur(12px);
+  background: rgba(10, 11, 26, .55);
+  backdrop-filter: blur(var(--blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 10px 40px rgba(0,0,0,.35);
 }
 
 .header-inner {
@@ -72,32 +143,96 @@ body {
   gap: .5rem;
 }
 
+/* ── Tab bar ──────────────────────────────────────────────────────────────── */
+.tab-bar {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 1.25rem .75rem;
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  padding: .5rem 1.1rem;
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: .82rem;
+  letter-spacing: .2px;
+  background: rgba(255, 255, 255, .05);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 18px rgba(0,0,0,.3);
+  transition: all .2s ease;
+}
+
+.tab-btn:hover {
+  transform: translateY(-2px);
+  color: var(--text);
+  background: rgba(255, 255, 255, .1);
+  border-color: rgba(255, 255, 255, .22);
+}
+
+.tab-btn.active {
+  color: #fff;
+  border-color: rgba(255, 255, 255, .28);
+  transform: translateY(-1px) scale(1.03);
+}
+
+.tab-btn[data-tab="standard"].active {
+  background: linear-gradient(135deg, rgba(108,127,255,.5), rgba(124,58,237,.5));
+  box-shadow: 0 12px 30px rgba(108,127,255,.35);
+}
+
+.tab-btn[data-tab="standard-hard"].active {
+  background: linear-gradient(135deg, rgba(251,191,36,.5), rgba(217,119,6,.4));
+  box-shadow: 0 12px 30px rgba(251,191,36,.3);
+}
+
+.tab-btn[data-tab="ai"].active {
+  background: linear-gradient(135deg, rgba(232,121,201,.5), rgba(124,58,237,.5));
+  box-shadow: 0 12px 30px rgba(232,121,201,.35);
+}
+
+.tab-btn[data-tab="ai-hard"].active {
+  background: linear-gradient(135deg, rgba(232,121,201,.5), rgba(251,191,36,.45));
+  box-shadow: 0 12px 30px rgba(232,121,201,.3);
+}
+
 /* ── Buttons ──────────────────────────────────────────────────────────────── */
 button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 
 .btn-primary {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), #8a5cf6);
   color: #fff;
-  padding: .6rem 1.4rem;
-  border-radius: 8px;
+  padding: .65rem 1.5rem;
+  border-radius: 10px;
   font-weight: 600;
   font-size: .95rem;
-  transition: background .15s, transform .1s;
+  box-shadow: 0 8px 24px rgba(108,127,255,.35);
+  transition: transform .15s ease, box-shadow .15s ease;
 }
-.btn-primary:hover  { background: var(--primary-h); }
+.btn-primary:hover  { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(108,127,255,.45); }
 .btn-primary:active { transform: scale(.97); }
 
+.btn-primary.btn-danger {
+  background: linear-gradient(135deg, #f87171, #b91c1c);
+  box-shadow: 0 8px 24px rgba(248,113,113,.3);
+}
+.btn-primary.btn-danger:hover { box-shadow: 0 12px 30px rgba(248,113,113,.4); }
+
 .btn-ghost {
-  background: transparent;
+  background: rgba(255,255,255,.05);
+  backdrop-filter: blur(10px);
   color: var(--text-muted);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: .4rem .85rem;
   font-size: .82rem;
-  transition: color .15s, border-color .15s;
+  transition: color .15s, border-color .15s, background .15s;
 }
-.btn-ghost:hover { color: var(--text); border-color: var(--primary); }
-.btn-ghost.active { color: var(--warn); border-color: var(--warn); }
+.btn-ghost:hover { color: var(--text); border-color: var(--primary); background: rgba(255,255,255,.1); }
 .btn-ghost.danger:hover { color: var(--error); border-color: var(--error); }
 
 /* ── Main / screens ───────────────────────────────────────────────────────── */
@@ -118,15 +253,32 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Empty state */
-.empty-state { text-align: center; }
+.empty-state {
+  text-align: center;
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2.5rem 2rem;
+  max-width: 480px;
+}
 .big-emoji { font-size: 4rem; margin-bottom: .5rem; }
 .empty-state h2 { font-size: 1.6rem; margin-bottom: .5rem; }
 .empty-state p  { color: var(--text-muted); margin-bottom: 1.5rem; }
 
+.empty-actions {
+  display: flex;
+  flex-direction: column;
+  gap: .7rem;
+  align-items: stretch;
+}
+
 /* ── Progress bar ─────────────────────────────────────────────────────────── */
 .progress-wrap {
   height: 4px;
-  background: var(--surface-alt);
+  background: rgba(255,255,255,.08);
   border-radius: 4px;
   margin-bottom: 1.5rem;
   overflow: hidden;
@@ -141,10 +293,23 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 /* ── Card ─────────────────────────────────────────────────────────────────── */
 .card {
   background: var(--surface);
+  backdrop-filter: blur(var(--blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.75rem;
   box-shadow: var(--shadow);
+  transition: box-shadow .25s ease, border-color .25s ease;
+}
+
+.card.ai-mode {
+  border-color: rgba(232,121,201,.5);
+  box-shadow: 0 10px 40px rgba(232,121,201,.22);
+}
+
+.card.ai-mode .q-label {
+  color: var(--ai-accent);
+  background: rgba(232,121,201,.16);
 }
 
 .card-meta {
@@ -171,7 +336,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   letter-spacing: .08em;
   text-transform: uppercase;
   color: var(--primary);
-  background: rgba(108,127,255,.12);
+  background: rgba(108,127,255,.16);
   padding: .2rem .65rem;
   border-radius: 999px;
 }
@@ -186,7 +351,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   border-radius: 6px;
 }
 .bookmark:hover { color: var(--warn); transform: scale(1.15); }
-.bookmark.is-hard { color: var(--warn); }
+.bookmark.is-hard { color: var(--warn); text-shadow: 0 0 10px rgba(251,191,36,.5); }
 
 .question-text {
   font-size: 1.08rem;
@@ -194,6 +359,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   line-height: 1.7;
   margin-bottom: 1.5rem;
   white-space: pre-wrap;
+  text-shadow: 0 2px 6px rgba(0,0,0,.35);
 }
 
 /* ── Options ──────────────────────────────────────────────────────────────── */
@@ -220,7 +386,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   width: 100%;
 }
 .option-btn:hover:not(:disabled) {
-  background: #252a40;
+  background: rgba(255,255,255,.1);
   border-color: var(--primary);
   transform: translateX(2px);
 }
@@ -230,7 +396,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   flex-shrink: 0;
   width: 26px; height: 26px;
   border-radius: 50%;
-  background: var(--border);
+  background: rgba(255,255,255,.1);
   color: var(--text-muted);
   font-weight: 700;
   font-size: .82rem;
@@ -241,30 +407,30 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 
 /* Answer result states */
 .option-btn.correct {
-  background: rgba(52,211,153,.1);
+  background: rgba(74,222,128,.12);
   border-color: var(--success);
 }
 .option-btn.correct .option-letter {
   background: var(--success);
-  color: #0f1117;
+  color: #05060f;
 }
 
 .option-btn.wrong {
-  background: rgba(248,113,113,.1);
+  background: rgba(248,113,113,.12);
   border-color: var(--error);
-  opacity: .75;
+  opacity: .8;
 }
 .option-btn.wrong .option-letter {
   background: var(--error);
-  color: #0f1117;
+  color: #05060f;
 }
 
 .option-btn.reveal {
-  background: rgba(52,211,153,.07);
-  border-color: rgba(52,211,153,.4);
+  background: rgba(74,222,128,.08);
+  border-color: rgba(74,222,128,.4);
 }
 .option-btn.reveal .option-letter {
-  background: rgba(52,211,153,.3);
+  background: rgba(74,222,128,.3);
   color: var(--success);
 }
 
@@ -282,8 +448,8 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   font-size: 1rem;
   margin-bottom: .5rem;
 }
-.feedback-header.ok  { color: var(--success); }
-.feedback-header.bad { color: var(--error);   }
+.feedback-header.ok  { color: var(--success); text-shadow: 0 0 10px rgba(74,222,128,.5); }
+.feedback-header.bad { color: var(--error);   text-shadow: 0 0 10px rgba(248,113,113,.5); }
 
 .feedback-explanation {
   font-size: .9rem;
@@ -298,4 +464,6 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   .card { padding: 1.25rem; }
   .question-text { font-size: 1rem; }
   .option-btn { font-size: .9rem; }
+  .tab-bar { gap: .4rem; }
+  .tab-btn { padding: .4rem .8rem; font-size: .76rem; }
 }

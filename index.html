@@ -4,11 +4,46 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Claude Architect Foundations – Quiz</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <!-- BUG-13 fixed: removed duplicate <link rel="stylesheet" href="/src/style.css" />.
          CSS is injected via `import './style.css'` in main.js — the explicit link
          would 404 in production after vite build hashes the asset. -->
+    <!-- Critical inline CSS: paints the dark background immediately so there's
+         no flash of unstyled (white) content while the module script loads
+         and applies the real stylesheet. -->
+    <style>
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        background: radial-gradient(ellipse at bottom, #1a1c3f 0%, #05060f 100%);
+        color: #f5f7ff;
+      }
+      /* Reveal via a fade-OUT cover, not a fade-IN of the content itself.
+         #header/.card/.empty-state use backdrop-filter, and Chromium renders
+         backdrop-filter incorrectly while an ANCESTOR's opacity is mid
+         transition (blur looks wrong/absent), then visibly snaps to the
+         correct blur the instant the transition ends — that snap was the
+         "jump". Real content (.space/#app) is never opacity-animated here,
+         so backdrop-filter always sees a stable, fully-rendered background;
+         a plain opaque cover (no backdrop-filter of its own) sits on top and
+         fades away instead. */
+      #reveal-cover {
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        background: radial-gradient(ellipse at bottom, #1a1c3f 0%, #05060f 100%);
+        opacity: 1;
+        transition: opacity .5s ease;
+        pointer-events: none;
+      }
+      html.ready #reveal-cover {
+        opacity: 0;
+      }
+    </style>
   </head>
   <body>
+    <div id="reveal-cover"></div>
+    <div class="space" id="space-bg"></div>
     <div id="app">
       <!-- Header -->
       <header id="header">
@@ -19,10 +54,15 @@
           </div>
           <div class="stats" id="stats"></div>
           <div class="header-actions">
-            <button id="btn-hard-mode" class="btn-ghost" title="Show hard questions only">⭐ Hard</button>
             <button id="btn-reset" class="btn-ghost danger" title="Reset all progress">↺ Reset</button>
           </div>
         </div>
+        <nav class="tab-bar">
+          <button class="tab-btn" data-tab="standard" title="Standard questions">📘 Regular</button>
+          <button class="tab-btn" data-tab="standard-hard" title="Bookmarked hard questions (regular)">⭐ Regular Hard</button>
+          <button class="tab-btn" data-tab="ai" title="AI-generated custom questions">✨ AI</button>
+          <button class="tab-btn" data-tab="ai-hard" title="Bookmarked hard questions (AI-generated)">✨⭐ AI Hard</button>
+        </nav>
       </header>
 
       <!-- Main content -->
@@ -32,16 +72,16 @@
           <p>Loading questions…</p>
         </div>
 
-        <div id="screen-empty" class="screen center hidden">
+        <div id="screen-empty" class="screen center" hidden>
           <div class="empty-state">
-            <div class="big-emoji">🎉</div>
-            <h2>All done!</h2>
+            <div class="big-emoji" id="empty-emoji">🎉</div>
+            <h2 id="empty-title">All done!</h2>
             <p id="empty-msg">You answered all questions correctly.</p>
-            <button id="btn-restart" class="btn-primary">Start Over</button>
+            <div class="empty-actions" id="empty-actions"></div>
           </div>
         </div>
 
-        <div id="screen-quiz" class="screen hidden">
+        <div id="screen-quiz" class="screen" hidden>
           <!-- Progress bar -->
           <div class="progress-wrap">
             <div class="progress-bar" id="progress-bar"></div>
@@ -61,7 +101,7 @@
 
             <div id="options-list" class="options-list"></div>
 
-            <div id="feedback" class="feedback hidden">
+            <div id="feedback" class="feedback" hidden>
               <div id="feedback-header" class="feedback-header"></div>
               <p id="feedback-explanation" class="feedback-explanation"></p>
               <button id="btn-next" class="btn-primary">Next question →</button>
