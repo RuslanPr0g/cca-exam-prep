@@ -110,7 +110,7 @@ body {
 .header-inner {
   max-width: 720px;
   margin: 0 auto;
-  padding: .75rem 1.25rem;
+  padding: .5rem 1.25rem;
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -147,18 +147,18 @@ body {
 .tab-bar {
   max-width: 720px;
   margin: 0 auto;
-  padding: 0 1.25rem .75rem;
+  padding: 0 1.25rem .5rem;
   display: flex;
-  gap: .6rem;
+  gap: .5rem;
   flex-wrap: wrap;
 }
 
 .tab-btn {
-  padding: .5rem 1.1rem;
+  padding: .4rem .9rem;
   border-radius: 999px;
   color: var(--text-muted);
   font-weight: 600;
-  font-size: .82rem;
+  font-size: .78rem;
   letter-spacing: .2px;
   background: rgba(255, 255, 255, .05);
   backdrop-filter: blur(10px);
@@ -236,10 +236,10 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 .btn-ghost.danger:hover { color: var(--error); border-color: var(--error); }
 
 /* ── Main / screens ───────────────────────────────────────────────────────── */
-#main { max-width: 720px; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
+#main { max-width: 720px; margin: 0 auto; padding: 1rem 1.25rem 1.5rem; }
 
 .screen { width: 100%; }
-.screen.center { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 1rem; }
+.screen.center { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 40vh; gap: 1rem; }
 .hidden { display: none !important; }
 
 /* Loading spinner */
@@ -280,7 +280,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   height: 4px;
   background: rgba(255,255,255,.08);
   border-radius: 4px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   overflow: hidden;
 }
 .progress-bar {
@@ -292,12 +292,12 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 
 /* ── Card ─────────────────────────────────────────────────────────────────── */
 .card {
-  background: var(--surface);
-  backdrop-filter: blur(var(--blur)) saturate(160%);
-  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
+  /* Fully opaque — unlike other glass surfaces, the question card is the
+     primary reading surface and needs solid contrast behind long text. */
+  background: #1c1e30;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1.75rem;
+  padding: 1.25rem 1.5rem;
   box-shadow: var(--shadow);
   transition: box-shadow .25s ease, border-color .25s ease;
 }
@@ -316,7 +316,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: .75rem;
 }
 
 .card-meta-right {
@@ -354,10 +354,10 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 .bookmark.is-hard { color: var(--warn); text-shadow: 0 0 10px rgba(251,191,36,.5); }
 
 .question-text {
-  font-size: 1.08rem;
+  font-size: 1.02rem;
   font-weight: 500;
-  line-height: 1.7;
-  margin-bottom: 1.5rem;
+  line-height: 1.55;
+  margin-bottom: 1rem;
   white-space: pre-wrap;
   text-shadow: 0 2px 6px rgba(0,0,0,.35);
 }
@@ -366,7 +366,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 .options-list {
   display: flex;
   flex-direction: column;
-  gap: .7rem;
+  gap: .5rem;
 }
 
 .option-btn {
@@ -376,11 +376,11 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   background: var(--surface-alt);
   border: 1.5px solid var(--border);
   border-radius: 10px;
-  padding: .85rem 1.1rem;
+  padding: .65rem .9rem;
   text-align: left;
   color: var(--text);
-  font-size: .95rem;
-  line-height: 1.55;
+  font-size: .9rem;
+  line-height: 1.45;
   transition: background .14s, border-color .14s, transform .1s;
   cursor: pointer;
   width: 100%;
@@ -394,12 +394,12 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 
 .option-letter {
   flex-shrink: 0;
-  width: 26px; height: 26px;
+  width: 22px; height: 22px;
   border-radius: 50%;
   background: rgba(255,255,255,.1);
   color: var(--text-muted);
   font-weight: 700;
-  font-size: .82rem;
+  font-size: .78rem;
   display: flex; align-items: center; justify-content: center;
   transition: background .14s, color .14s;
   margin-top: 1px;
@@ -436,8 +436,8 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 
 /* ── Feedback ─────────────────────────────────────────────────────────────── */
 .feedback {
-  margin-top: 1.25rem;
-  padding: 1.1rem 1.25rem;
+  margin-top: .85rem;
+  padding: .85rem 1rem;
   border-radius: 10px;
   background: var(--surface-alt);
   border: 1px solid var(--border);
@@ -445,25 +445,26 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 
 .feedback-header {
   font-weight: 700;
-  font-size: 1rem;
-  margin-bottom: .5rem;
+  font-size: .95rem;
+  margin-bottom: .4rem;
 }
 .feedback-header.ok  { color: var(--success); text-shadow: 0 0 10px rgba(74,222,128,.5); }
 .feedback-header.bad { color: var(--error);   text-shadow: 0 0 10px rgba(248,113,113,.5); }
 
 .feedback-explanation {
-  font-size: .9rem;
+  font-size: .87rem;
   color: var(--text-muted);
-  line-height: 1.65;
-  margin-bottom: 1rem;
+  line-height: 1.55;
+  margin-bottom: .75rem;
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 520px) {
   .brand-name { display: none; }
-  .card { padding: 1.25rem; }
-  .question-text { font-size: 1rem; }
-  .option-btn { font-size: .9rem; }
-  .tab-bar { gap: .4rem; }
-  .tab-btn { padding: .4rem .8rem; font-size: .76rem; }
+  .card { padding: 1rem 1.1rem; }
+  .question-text { font-size: .95rem; margin-bottom: .8rem; }
+  .option-btn { font-size: .86rem; padding: .55rem .8rem; }
+  .tab-bar { gap: .35rem; }
+  .tab-btn { padding: .35rem .7rem; font-size: .72rem; }
+  #main { padding: .75rem 1rem 1.25rem; }
 }
