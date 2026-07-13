@@ -1,8 +1,13 @@
 {
-  "name": "quiz-app",
-  "version": "0.0.0",
+  "name": "cca-exam-prep",
+  "version": "0.1.0",
+  "description": "Offline-first practice quiz for the Claude Certified Architect - Foundations (CCA-F) exam.",
   "private": true,
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RuslanPr0g/cca-exam-prep.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
