@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "total": 10,
+  "total": 50,
   "questions": [
     {
       "id": "ai-1",
@@ -160,6 +160,246 @@
       "domain": 1,
       "domainName": "Agentic Architecture &amp; Orchestration",
       "task": "1.3",
+      "source": "ai"
+    },
+    {
+      "id": "ai-11",
+      "questionText": "A grant-writing platform's coordinator delegates literature scans to a subagent 6–8 times per proposal. Each delegation returns the subagent's complete working transcript — every search query, dead end, and reasoning step, roughly 15,000 tokens — which the coordinator ingests. By the fifth delegation the coordinator's context is dominated by scan transcripts and its proposal-drafting quality visibly drops. What should change about the context passing?",
+      "options": {
+        "A": "After ingesting each transcript, have the coordinator write a condensed summary note and rely on that note for later drafting instead of the raw transcript.",
+        "B": "Have the subagent return only a structured findings report — sources, key claims, relevance notes — while its working transcript stays in its own context and is discarded on completion.",
+        "C": "Merge the 6–8 scans into a single larger delegation per proposal, so only one transcript comes back to the coordinator instead of many.",
+        "D": "Increase the coordinator's context budget so all of the proposal's scan transcripts fit with room to spare for drafting."
+      },
+      "correct": "B",
+      "explanation": "The boundary between coordinator and subagent is exactly where working detail should be shed: the subagent's searches and dead ends served their purpose inside the subagent, and only distilled findings are useful upstream, so option B keeps ~15,000 tokens of process out of the coordinator per delegation. Option A summarizes too late — the coordinator has already ingested each full transcript by the time it condenses, so the context cost is paid and dilution has occurred. Option C batches the volume rather than reducing it: one delegation covering 6–8 scans returns one proportionally larger transcript. Option D is a capacity fix for a relevance problem — the drafting degradation comes from the coordinator's context being dominated by process noise, which a bigger window preserves rather than prevents.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.3",
+      "source": "ai"
+    },
+    {
+      "id": "ai-12",
+      "questionText": "A localization team routes all product-manual translations through one long-lived subagent session, reused across documents \"so it learns house style.\" QA finds terminology from earlier manuals leaking into later, unrelated ones — a drone manual used climbing-harness terms from the previous job — in roughly 1 in 10 documents. What is the correct spawning design?",
+      "options": {
+        "A": "Keep the shared session but begin every new document with an explicit instruction to disregard all previously translated documents.",
+        "B": "Keep the shared session and compact it between documents so earlier manuals are reduced to summaries before the next job starts.",
+        "C": "Keep the shared session but lower the sampling temperature for translation calls to reduce the model's tendency to borrow terms across documents.",
+        "D": "Spawn a fresh subagent per document, passing the house-style guide and a per-domain glossary explicitly in each spawn's starting context."
+      },
+      "correct": "D",
+      "explanation": "The contamination comes from prior documents physically sharing the context window; fresh spawning removes that channel entirely, and the one thing the reuse was preserving — house style — is better carried as an explicit artifact passed to every spawn, which option D does. Option A leaves the climbing-harness terminology in context and asks the model to probabilistically ignore it; the 1-in-10 leak rate is what that approach produces. Option B is lossy in the wrong direction — summaries of earlier manuals still carry their distinctive terms, so compaction shrinks the contamination without removing it. Option C reaches for a sampling knob to fix a context problem: lower temperature makes the model more deterministic about its context, which still contains the foreign terminology.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.3",
+      "source": "ai"
+    },
+    {
+      "id": "ai-13",
+      "questionText": "A mortgage platform's intake agent collects and verifies applicant documents, then hands off to an underwriting agent that runs with restricted data access the intake agent must not share. In 30% of handoffs, the underwriting agent asks applicants to re-upload documents intake already verified. The handoff today is a single instruction: \"continue processing application #4471.\" What fixes the redundant requests?",
+      "options": {
+        "A": "Hand off a structured state artifact — checklist of verified documents, extracted applicant facts, and outstanding items — that becomes the underwriting agent's starting context.",
+        "B": "Give the underwriting agent the intake agent's full conversation transcript so that nothing collected or verified during intake can be lost in the handoff.",
+        "C": "Have the underwriting agent query the document store at startup and infer verification status from which applicant files are present in it.",
+        "D": "Merge intake and underwriting into a single agent handling applications end-to-end, so no handoff exists to lose state across."
+      },
+      "correct": "A",
+      "explanation": "The underwriting agent re-requests documents because the handoff carries an application ID and nothing else; a structured state artifact transfers exactly the process state — what was verified, what remains — that the ID alone doesn't encode. Option B transfers the state buried in a long raw dialogue full of upload failures and small talk, forcing the underwriter to re-derive verification status from conversation flow, which is token-heavy and error-prone compared to a checklist. Option C infers the wrong thing: a file's presence in the store doesn't distinguish verified documents from ones uploaded and rejected, so verification status — the state that matters — is guessed. Option D removes the failure mode but violates the stated constraint that underwriting runs with restricted data access separate from intake.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.4",
+      "source": "ai"
+    },
+    {
+      "id": "ai-14",
+      "questionText": "A travel-booking workflow's third step charges the customer via `capture_payment`. The payment provider times out on about 5% of bookings, and in some of those the charge actually succeeded server-side before the timeout; the agent's retry then double-charges — about 2% of all bookings. What is the correct enforcement fix?",
+      "options": {
+        "A": "Increase the client-side timeout so slow-but-successful captures have time to return before the retry logic ever triggers.",
+        "B": "Prohibit retries on the payment step entirely and route every timed-out capture to a human operator for manual resolution.",
+        "C": "Attach an idempotency key to each `capture_payment` call and have the retry path check charge status first, so a retry can never re-execute a completed capture.",
+        "D": "Add a reconciliation job that scans the day's transactions for duplicate charges and automatically refunds the extra capture."
+      },
+      "correct": "C",
+      "explanation": "The defect is that a retry is not distinguishable from a first attempt; idempotency keys plus a status check make retries structurally safe, eliminating double charges rather than reducing their odds. Option A shrinks the window but can't close it — some captures will exceed any finite timeout, and each one that does still double-charges. Option B is safe but surrenders automation for the whole 5% timeout population to fix the 2% that actually double-charge, turning a mostly transient fault into a standing manual queue. Option D is the right category (programmatic) applied after the harm: customers still see double charges and wait out the refund cycle, and reconciliation heuristics can miss legitimate same-day duplicate purchases.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.4",
+      "source": "ai"
+    },
+    {
+      "id": "ai-15",
+      "questionText": "A nightly invoice pipeline has four fixed steps that never vary: fetch new invoices, validate them against purchase orders, post them to the ledger, and email exceptions to accounting. It is currently implemented as an autonomous agent told to \"process tonight's invoices,\" choosing its own tool order — and twice this month it skipped the purchase-order validation step. How should this be architected?",
+      "options": {
+        "A": "Add few-shot examples to the agent's prompt demonstrating the correct four-step order across several representative nights.",
+        "B": "Encode the four steps as a deterministic pipeline in orchestration code, invoking the model within steps that need judgment — like drafting exception emails — rather than for step ordering.",
+        "C": "Keep the agent in control of ordering but add a final self-review instruction requiring it to confirm all four steps ran before ending its turn.",
+        "D": "Split each step into its own specialized subagent and introduce a coordinator agent that decides the invocation order each night."
+      },
+      "correct": "B",
+      "explanation": "When a workflow's structure is fixed and known in advance, control flow belongs in code and the model belongs inside the steps that need language intelligence; option B makes skipping validation impossible rather than unlikely. Option A improves the odds but keeps step ordering probabilistic — for a ledger-affecting sequence that already failed twice in a month, better odds is the wrong target. Option C relies on the same model that skipped the step to notice it skipped the step, and its check runs after the ledger post, when un-validated invoices have already been recorded. Option D adds agents while preserving the defect: a coordinator agent deciding order each night is still a probabilistic decision-maker performing what should be a hardcoded sequence.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.4",
+      "source": "ai"
+    },
+    {
+      "id": "ai-16",
+      "questionText": "An expense agent must obtain finance-team approval before submitting reimbursements over $2,000. Today it asks for approval in the chat and proceeds on any affirmative reply; an audit found 7 cases where the requester themselves replied \"approved\" and the agent submitted. What is the correct enforcement design?",
+      "options": {
+        "A": "Rewrite the prompt to define exactly whose messages count as approval and instruct the agent to confirm the replier's finance-team role before proceeding.",
+        "B": "Require approval messages to include the approver's employee ID, which the agent checks against the finance-team roster before submitting.",
+        "C": "Add an audit hook that flags any reimbursement over $2,000 lacking an approval message, producing a weekly exception report for finance.",
+        "D": "Pause the workflow programmatically at the threshold, and gate `submit_reimbursement` on an approval recorded through an authenticated channel that the orchestrator verifies before the tool can execute."
+      },
+      "correct": "D",
+      "explanation": "The vulnerability is that approval is inferred from unauthenticated conversation text; the fix is to move it out of band — the workflow halts, a verified approver acts through an authenticated channel, and the orchestrator checks that recorded fact before the submission tool is executable. Option A asks the agent to verify identity from message content, which the conversation doesn't actually carry — the model cannot distinguish the requester typing \"approved\" from a finance member doing so. Option B adds a credential that is just more typable text: any requester who knows or guesses an ID passes the check. Option C is detection after the money has moved — a weekly report converts a preventable violation into a recurring cleanup task.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.4",
+      "source": "ai"
+    },
+    {
+      "id": "ai-17",
+      "questionText": "Your HR-assistant agent forwards employee queries to a third-party analytics MCP tool for intent classification. Legal requires that employee names and ID numbers never reach the third party. Where must the redaction be enforced?",
+      "options": {
+        "A": "In a PreToolUse hook that scans and redacts the tool call's arguments before execution, blocking the call outright if redaction cannot be applied cleanly.",
+        "B": "In a PostToolUse hook that strips names and ID numbers from the classification result before it re-enters the model's context window.",
+        "C": "In the system prompt, instructing the agent to remove names and ID numbers when it constructs the input for the analytics tool call.",
+        "D": "In the analytics tool's server code, dropping PII fields on receipt before the classification model processes them."
+      },
+      "correct": "A",
+      "explanation": "The data crosses the trust boundary at the moment the tool call executes, so the only enforcement point that satisfies \"never reaches the third party\" is interception before execution — a PreToolUse hook that rewrites arguments deterministically, with a hard block as the fallback. Option B operates on the response: by the time a PostToolUse hook runs, the un-redacted arguments have already been transmitted. Option C makes a legal requirement probabilistic — the agent will usually comply, and a single miss is a reportable violation. Option D puts the control on the wrong side of the boundary twice over: the server belongs to the third party, so you can't modify it, and even if you could, the PII has already arrived there.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.5",
+      "source": "ai"
+    },
+    {
+      "id": "ai-18",
+      "questionText": "A fleet-dispatch agent's PreToolUse hook blocks `assign_route` calls that would violate driver hour-limit rules. The hook blocks silently — the model receives nothing back. Logs show the agent re-issuing the identical blocked call up to 5 times, then ending its turn reporting that the assignment was made. What should the hook do instead when it blocks?",
+      "options": {
+        "A": "Terminate the session whenever a violating call is blocked, so a fresh session can restart the dispatch task from a clean state.",
+        "B": "Continue blocking silently but emit a detailed entry to the operations log each time, so the dispatch team can review blocked assignments.",
+        "C": "Return a structured denial into the conversation — which rule failed, the driver's actual hour figures, and what alternatives are permissible — so the model can adapt its next action.",
+        "D": "Silently rewrite the call's arguments to the nearest hour-compliant driver and allow the modified call to execute in place of the original."
+      },
+      "correct": "C",
+      "explanation": "A blocked call with no feedback is invisible to the model, which explains both symptoms: it retries the same call because nothing told it the call failed, then reports success because nothing told it otherwise; option C closes the loop so the agent can reassign intelligently. Option A is disproportionate — the task is recoverable (assign a different driver), and a fresh session re-derives everything only to hit the same silent wall. Option B gives humans observability while leaving the model exactly as blind as today; the retry loop and the false success report both persist. Option D executes something, but the model's world-model now diverges from reality — it believes its original assignment ran, so its subsequent reasoning and its report to dispatch describe a route that was never created.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.5",
+      "source": "ai"
+    },
+    {
+      "id": "ai-19",
+      "questionText": "Compliance requires a complete, tamper-resistant record of every tool call your procurement agent makes — arguments and results — including calls to three third-party MCP servers you do not control. What is the correct capture mechanism?",
+      "options": {
+        "A": "Add a `log_audit` tool and a strict system prompt rule requiring the agent to call it after every other tool call, describing the call it just made.",
+        "B": "Register PreToolUse and PostToolUse hooks that write every call's arguments and result to an append-only store, executing deterministically on each call.",
+        "C": "Have each tool's MCP server log its own invocations internally, keeping the audit record adjacent to where each tool actually executes.",
+        "D": "Reconstruct the record in a nightly job that parses saved session transcripts and extracts the tool calls and results they contain."
+      },
+      "correct": "B",
+      "explanation": "Hooks sit in the invocation path itself, so they observe every call regardless of which server handles it, fire deterministically, and can write to an append-only store at the moment of action — all three compliance properties at once. Option A makes auditing probabilistic and self-reported: the agent can forget the follow-up call, and its description of its own arguments is a paraphrase, not a record. Option C is deterministic but structurally incomplete — the three third-party servers can't be modified, so the calls most in need of oversight are precisely the ones never logged. Option D is reconstruction rather than capture: transcripts are mutable session files, content can be lost to compaction before the nightly run, and a record assembled after the fact is not tamper-resistant.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.5",
+      "source": "ai"
+    },
+    {
+      "id": "ai-20",
+      "questionText": "You add a PreToolUse security hook that screens shell commands against a denylist. It is registered without a matcher, so it runs on every tool call — including `Read` and `Grep` — adding roughly 250ms per call. Investigation sessions averaging 80 tool calls now take about 20 seconds longer, though only around 10% of those calls are actually `Bash`. What is the right fix?",
+      "options": {
+        "A": "Replace the hook with a system prompt section listing the forbidden shell commands, removing the interception overhead entirely.",
+        "B": "Keep the hook global but cache screening verdicts keyed by tool arguments, so repeated identical calls skip the 250ms check.",
+        "C": "Convert it to a PostToolUse hook, which runs off the pre-execution critical path and no longer delays each tool call.",
+        "D": "Scope the hook with a matcher so it fires only on `Bash` tool calls, leaving the other ~90% of calls uninstrumented."
+      },
+      "correct": "D",
+      "explanation": "The hook's coverage is wrong, not its existence: matchers exist precisely so an interception applies only to the tools it protects, and scoping to `Bash` keeps the deterministic security check while removing ~90% of the added latency. Option A trades a guaranteed control for a probabilistic one — a denylist the model is asked to respect is not a denylist. Option B mostly doesn't fire: investigation calls like `Read` and `Grep` take overwhelmingly unique arguments, so the cache misses and the overhead remains. Option C makes the check fast by making it useless — screening a shell command after it has executed inverts the purpose of a pre-execution security gate.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.5",
+      "source": "ai"
+    },
+    {
+      "id": "ai-21",
+      "questionText": "You are documenting a data warehouse of 20 schemas totaling about 200 tables; individual schemas range from 3 to 45 tables. A first attempt decomposed the work into one subtask per column — roughly 3,000 subtasks. Coordination overhead dwarfed the actual writing, and the column docs read incoherently because each was written without its table's context. What decomposition fixes this?",
+      "options": {
+        "A": "Decompose per schema — 20 subtasks — so every writer holds the broadest possible context while it documents.",
+        "B": "Keep the per-column subtasks but prepend each one with a generated summary of its parent table for coherence.",
+        "C": "Decompose per table — about 200 subtasks — so each unit is written with its full table context and stays bounded in size regardless of schema.",
+        "D": "Run it as a single sequential session over all 200 tables, relying on context compaction to manage the accumulated material."
+      },
+      "correct": "C",
+      "explanation": "The table is the natural semantic unit here: columns only make sense in their table's context, and a table is small enough to document in one focused subtask, so 200 subtasks fixes both stated failures — coordination overhead collapses by ~15x and coherence comes free. Option A ignores the stated size spread: a 45-table schema is a very different subtask from a 3-table one, so per-schema units are unbounded and the large ones recreate a context problem. Option B patches coherence while leaving the dominant stated cost — coordinating 3,000 subtasks — completely intact, and adds a summary-generation step to every one of them. Option D trades decomposition for one enormous session in which compaction progressively discards earlier tables' details, degrading exactly the cross-referencing a warehouse doc needs.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.6",
+      "source": "ai"
+    },
+    {
+      "id": "ai-22",
+      "questionText": "A campaign-launch system translates marketing copy into 12 languages. Past runs translated everything in parallel, and brand terms came out inconsistent across languages in about a quarter of campaigns — one language transliterated a product name that another left in English. How should the work be decomposed?",
+      "options": {
+        "A": "Two phases: first produce a canonical terminology list (which terms stay in English, which localize, and how), then run the 12 translations in parallel with that list in each subtask's context.",
+        "B": "Keep the 12 parallel translations and add a reconciliation pass afterward that compares outputs across languages and corrects any terminology inconsistencies it detects.",
+        "C": "Run the 12 translations sequentially, letting each language's subtask see the previous languages' finished output so terminology choices propagate down the chain.",
+        "D": "Have each language's subtask independently derive terminology rules from the brand guidelines as its first step, before translating its assigned copy."
+      },
+      "correct": "A",
+      "explanation": "The inconsistency exists because a shared decision — how to treat each brand term — is currently being made 12 times independently; sequencing that one decision before the fan-out makes it once, then the translations are genuinely independent and safely parallel. Option B allows the divergence and then pays to find it: cross-language inconsistency detection requires comparing 12 outputs pairwise in 12 languages, an expensive and unreliable rework pass for something a one-page artifact prevents. Option C buys consistency by serializing everything — roughly 12x the latency — and produces consistency by accretion, where every later language inherits whichever unvetted choice the first language happened to make. Option D is the current failure restated with an extra step: 12 independent derivations from the same guidelines are 12 opportunities to diverge, which is what the 25% figure already measures.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.6",
+      "source": "ai"
+    },
+    {
+      "id": "ai-23",
+      "questionText": "You must migrate 60 REST endpoints from Express to Fastify; each endpoint has a route definition, a handler, and tests. The team requires CI to stay green on every merge throughout the migration. Which decomposition satisfies that?",
+      "options": {
+        "A": "By layer: migrate all 60 route definitions first, then all 60 handlers, then update all the tests as a final phase.",
+        "B": "By endpoint: each subtask migrates one endpoint end-to-end — route, handler, and its tests — merging a working vertical slice each time.",
+        "C": "As one large session that migrates the whole codebase in a single continuous effort, relying on compaction to manage the accumulated context.",
+        "D": "As alphabetical batches of 15 files each, sized so every merge produces a diff small enough to review comfortably regardless of endpoint boundaries."
+      },
+      "correct": "B",
+      "explanation": "Endpoint-level vertical slices are the only decomposition here whose intermediate states are complete: after every merge, each endpoint is either fully Express or fully Fastify with passing tests, so CI stays green throughout — the stated requirement. Option A's intermediate states are structurally broken: routes migrated ahead of handlers can't pass their tests, so CI is red for the entire middle of the migration. Option C abandons incremental verification entirely — one failure domain spanning 60 endpoints, with compaction eroding early-migration details the later work depends on. Option D optimizes a real but secondary concern: alphabetical file batches cut endpoints in half across merges (a route in one batch, its handler in another), recreating option A's broken intermediate states with tidier diffs.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.6",
+      "source": "ai"
+    },
+    {
+      "id": "ai-24",
+      "questionText": "Yesterday a developer's Claude Code session started a local mock-payment server and set several test environment variables while debugging a checkout flow. This morning they run `--resume`, and the agent immediately fires requests at the mock server — which died overnight — then spends 15 minutes misdiagnosing the connection failures as checkout-code bugs. What is the correct understanding and fix?",
+      "options": {
+        "A": "Session state is designed to include background processes; configure the session so its processes persist across resumes and the morning failures disappear.",
+        "B": "Use `fork_session` instead of `--resume`, since forking re-initializes the working environment while resuming carries yesterday's stale environment forward.",
+        "C": "Add a CLAUDE.md rule forbidding the agent from depending on long-running local processes, so no session can be misled by a dead server again.",
+        "D": "Resumption restores conversation history, not external state; start resumed sessions by re-establishing the environment — restart the mock server, re-verify env vars — before continuing the investigation."
+      },
+      "correct": "D",
+      "explanation": "A resumed session gets its memory back, not its world: the conversation says a server is running, the machine disagrees, and the agent trusts its context — so the fix is an explicit re-establish-and-verify step at the top of any resumed session. Option A rests on a false premise: session persistence covers the conversation, and no configuration makes it keep operating-system processes alive overnight. Option B swaps in a real mechanism with an invented property — forking branches the conversation history from a point, and neither forking nor resuming touches the execution environment. Option C prevents the symptom by banning a legitimate practice: long-running processes are fine within a session; the failure is specific to trusting them across a resume without re-verification.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.7",
+      "source": "ai"
+    },
+    {
+      "id": "ai-25",
+      "questionText": "A feature build will span about three weeks of daily Claude Code work. A teammate proposes carrying context forward by resuming one ever-growing session each morning. In a previous attempt at this, the session was compacting constantly by week two and the agent had lost track of early design decisions. What is the right session strategy?",
+      "options": {
+        "A": "Keep resuming the single session but compact manually at the end of each day, deliberately choosing which material survives into the next morning.",
+        "B": "Fork the session each morning instead of resuming it, so every day begins on a clean branch of the previous day's state.",
+        "C": "Externalize durable state into repository files — design decisions, a progress log, next steps — and run focused sessions that read those documents at start and update them at end.",
+        "D": "Start a fresh session each morning and paste the prior day's full transcript into it as opening context, guaranteeing nothing is silently dropped."
+      },
+      "correct": "C",
+      "explanation": "Three weeks of work will not fit in any context window, so the durable state must live outside the session: files carry decisions losslessly and indefinitely, each day's session stays small and focused, and week one's design rationale is as available in week three as the day it was written. Option A still funnels weeks of accumulating history through one lossy channel — manual curation slows the degradation the previous attempt saw but cannot arrest it. Option B misunderstands what forking does: the fork inherits the parent's full history, so each morning's branch starts exactly as bloated as the session it branched from. Option D re-pays the entire history as fresh input every morning, growing daily until the transcript itself no longer fits — the compaction problem reproduced by hand.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.7",
       "source": "ai"
     }
   ]
