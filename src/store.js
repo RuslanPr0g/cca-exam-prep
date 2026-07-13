@@ -8,7 +8,7 @@ const KEY_TAB       = 'quiz_tab';        // persisted active tab (see VALID_TABS
 // easy to leave inconsistent (e.g. a stale message from one toggle's branch
 // after switching the other); one tab value has no such cross-product to get
 // out of sync.
-export const VALID_TABS = ['standard', 'standard-hard', 'ai', 'ai-hard'];
+export const VALID_TABS = ['standard', 'standard-hard', 'ai', 'ai-hard', 'random'];
 
 // ── In-memory cache (BUG-08) ──────────────────────────────────────────────────
 // Avoids redundant JSON.parse on every read within the same interaction.
@@ -80,15 +80,18 @@ export function shuffle(arr) {
 
 /**
  * Build the active question queue from all parsed questions.
- * - Skip already-correct ones.
+ * - Skip already-correct ones, unless `excludeCorrect: false` (used by the
+ *   Hard tabs, which are a standing review list — bookmarking a question
+ *   hard keeps it visible there even after you've answered it correctly
+ *   elsewhere; every other tab still hides it once correct).
  * - Randomise order.
  * BUG-17: Shuffle is intentional — queue order is NOT persisted across
  * refreshes. Questions seen but not answered may reappear in a different
  * order. This is by design for a randomised study tool.
  */
-export function buildQueue(questions) {
+export function buildQueue(questions, { excludeCorrect = true } = {}) {
   const correct = getCorrectIds();
-  const pending = questions.filter(q => !correct.has(q.id));
+  const pending = excludeCorrect ? questions.filter(q => !correct.has(q.id)) : questions.slice();
   return shuffle(pending);
 }
 
@@ -129,7 +132,7 @@ export function getStats(questions) {
 // ── Active tab persistence (BUG-16) ──────────────────────────────────────────
 export function getPersistedTab() {
   const value = localStorage.getItem(KEY_TAB);
-  return VALID_TABS.includes(value) ? value : 'standard';
+  return VALID_TABS.includes(value) ? value : 'random';
 }
 
 export function setPersistedTab(tab) {

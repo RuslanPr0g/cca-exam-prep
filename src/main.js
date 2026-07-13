@@ -8,8 +8,7 @@ import {
   getStats,
   getHardIds,
   getCorrectIds,
-  getPersistedTab, // BUG-16: restore active tab on refresh
-  setPersistedTab,
+  setPersistedTab, // still persisted for any future non-URL entry point
 } from './store.js';
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -23,11 +22,42 @@ const TAB_META = {
   'standard-hard': { label: '⭐ Regular Hard',  title: 'Bookmarked hard questions (regular)' },
   'ai':            { label: '✨ AI',            title: 'AI-generated custom questions' },
   'ai-hard':       { label: '✨⭐ AI Hard',      title: 'Bookmarked hard questions (AI-generated)' },
+  'random':        { label: '🎲 Random',       title: 'Random mix of all questions' },
 };
 const TABS = Object.keys(TAB_META);
 
 function tabSource(tab) { return tab.startsWith('ai') ? 'ai' : 'standard'; }
 function tabIsHard(tab)  { return tab.endsWith('-hard'); }
+function tabIsRandom(tab) { return tab === 'random'; }
+
+// ── URL routing ───────────────────────────────────────────────────────────────
+// Random is the default: bare root, or any path that doesn't match one of the
+// routes below, resolves to 'random'. The catch-all also covers direct/deep
+// links on GitHub Pages, which 404s server-side for any path but the site
+// root — see public/404.html, which redirects those straight to /random.
+const TAB_ROUTES = {
+  'standard':      'regular',
+  'standard-hard': 'regular-hard',
+  'ai':            'ai',
+  'ai-hard':       'ai-hard',
+  'random':        'random',
+};
+const ROUTE_TABS = Object.fromEntries(
+  Object.entries(TAB_ROUTES).map(([tab, route]) => [route, tab])
+);
+
+function routeFromTab(tab) { return TAB_ROUTES[tab] ?? 'random'; }
+
+function currentRoute() {
+  const base = import.meta.env.BASE_URL; // e.g. '/cca-exam-prep/'
+  let path = location.pathname;
+  if (path.startsWith(base)) path = path.slice(base.length);
+  return path.replace(/^\/+|\/+$/g, ''); // '' for bare root
+}
+
+function tabFromRoute(route) { return ROUTE_TABS[route] ?? 'random'; }
+
+function urlForTab(tab) { return `${import.meta.env.BASE_URL}${routeFromTab(tab)}`; }
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const screenLoading = document.getElementById('screen-loading');
@@ -58,11 +88,14 @@ let aiQuestions  = [];
 let queue        = [];
 let current      = null;
 let currentIndex = 0;
-let activeTab    = getPersistedTab(); // BUG-16: restore from localStorage
+// The URL is the source of truth for which tab is active (not localStorage —
+// see TAB_ROUTES above): bare/unrecognized paths default to 'random'.
+let activeTab    = tabFromRoute(currentRoute());
 let answered     = false; // BUG-06: guard against double-answer race
 
 // ── Tab / question-set helpers ────────────────────────────────────────────────
 function getSourceQuestions(tab) {
+  if (tabIsRandom(tab)) return [...allQuestions, ...aiQuestions];
   return tabSource(tab) === 'ai' ? aiQuestions : allQuestions;
 }
 
@@ -80,6 +113,10 @@ function hasPending(tab) {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
+  // Canonicalize the URL up front: bare root or anything unrecognized becomes
+  // /random so the address bar always matches the tab actually shown.
+  history.replaceState({ tab: activeTab }, '', urlForTab(activeTab));
+
   try {
     // BUG-03: handle fetch errors gracefully
     const res = await fetch(`${import.meta.env.BASE_URL}questions.json`);
@@ -122,7 +159,8 @@ function updateTabUI() {
   tabButtons.forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === activeTab);
   });
-  questionCard.classList.toggle('ai-mode', tabSource(activeTab) === 'ai');
+  // .ai-mode is decided per-question in showQuestion() now, not per-tab —
+  // Random mixes both sources, so a tab-level decision would be wrong there.
 }
 
 function showScreen(name) {
@@ -142,7 +180,10 @@ function showScreen(name) {
 // case — replaces the old buildHardQueue()/toggleHardMode()/toggleAiMode()
 // trio that each rebuilt the queue and set the empty message separately.
 function rebuildQueue() {
-  queue = buildQueue(getTabBaseQuestions(activeTab));
+  // Hard tabs are a standing review list — bookmark a question hard and it
+  // stays visible there even after you've answered it correctly elsewhere.
+  // Every other tab (including Random) still hides a question once correct.
+  queue = buildQueue(getTabBaseQuestions(activeTab), { excludeCorrect: !tabIsHard(activeTab) });
   updateStats();
 
   if (queue.length === 0) {
@@ -170,7 +211,9 @@ function renderEmptyState() {
     emptyTitle.textContent = isHardTab ? 'Hard queue cleared!' : 'All done!';
     emptyMsg.textContent = isHardTab
       ? 'No hard questions left here. Great work!'
-      : `You answered all ${tabSource(activeTab) === 'ai' ? 'AI-generated ' : ''}questions correctly. 🎉`;
+      : tabIsRandom(activeTab)
+        ? 'You answered every regular and AI question correctly. 🎉'
+        : `You answered all ${tabSource(activeTab) === 'ai' ? 'AI-generated ' : ''}questions correctly. 🎉`;
   }
 
   // Offer a shortcut into any other tab that still has pending questions.
@@ -196,13 +239,29 @@ function showQuestion(idx) {
   current      = queue[idx];
   answered     = false; // BUG-06: reset answered flag per question
 
-  // BUG-04/BUG-15: use 1-based index so bar is never 0% and reflects real progress
-  const s   = getStats(getTabBaseQuestions(activeTab));
-  const pct = s.total === 0 ? 0 : (((s.done + idx + 1) / s.total) * 100).toFixed(1);
-  progressBar.style.width = `${Math.min(pct, 100)}%`;
+  // Random mixes both sources, so "is this an AI question" has to be decided
+  // per-question (via the explicit `source` field on AI rows), not per-tab.
+  const isAiQuestion = current.source === 'ai';
+  questionCard.classList.toggle('ai-mode', isAiQuestion);
+
+  // Random has "no count or order" by design — hide the progress bar and
+  // queue position, which are both about sequence through a fixed set.
+  const progressWrap = document.querySelector('.progress-wrap');
+  const positionEl    = document.getElementById('q-position');
+  progressWrap.hidden = tabIsRandom(activeTab);
+
+  if (!tabIsRandom(activeTab)) {
+    // BUG-04/BUG-15: use 1-based index so bar is never 0% and reflects real progress
+    const s   = getStats(getTabBaseQuestions(activeTab));
+    const pct = s.total === 0 ? 0 : (((s.done + idx + 1) / s.total) * 100).toFixed(1);
+    progressBar.style.width = `${Math.min(pct, 100)}%`;
+    positionEl.textContent = `${idx + 1} / ${queue.length}`;
+  } else {
+    positionEl.textContent = '';
+  }
 
   // Q label (AI-generated questions get their own label instead of a domain number)
-  qLabel.textContent = tabSource(activeTab) === 'ai'
+  qLabel.textContent = isAiQuestion
     ? `✨ AI Generated · Task ${current.task}`
     : `Q${current.id} · Domain ${current.domain} · Task ${current.task}`;
 
@@ -234,10 +293,8 @@ function showQuestion(idx) {
     optionsList.appendChild(btn);
   });
 
-  // Hide feedback & show queue position
+  // Hide feedback (position already set above)
   feedbackDiv.hidden = true;
-  document.getElementById('q-position').textContent =
-    `${idx + 1} / ${queue.length}`;
 }
 
 function handleAnswer(chosen) {
@@ -295,9 +352,21 @@ function switchTab(tab) {
 
   activeTab = tab;
   setPersistedTab(tab); // BUG-16: persist across refresh
+  history.pushState({ tab }, '', urlForTab(tab));
   updateTabUI();
   rebuildQueue();
 }
+
+// Back/forward navigation between tab URLs — re-sync state from the URL
+// rather than trusting event.state, so it still works if the entry was typed
+// or opened directly rather than pushed by switchTab().
+window.addEventListener('popstate', () => {
+  const tab = tabFromRoute(currentRoute());
+  if (tab === activeTab) return;
+  activeTab = tab;
+  updateTabUI();
+  rebuildQueue();
+});
 
 // ── Space background (fewer stars on narrow viewports, never fully hidden) ──
 function initSpaceBackground() {

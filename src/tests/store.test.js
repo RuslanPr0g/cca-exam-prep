@@ -204,6 +204,20 @@ describe('buildQueue', () => {
     questions.forEach(q => markCorrect(q.id));
     expect(buildQueue(questions)).toHaveLength(0);
   });
+
+  it('excludeCorrect: false includes already-correct questions (Hard tabs standing review list)', () => {
+    markCorrect(1);
+    const q = buildQueue(questions, { excludeCorrect: false });
+    expect(q).toHaveLength(3);
+    expect(q.some(x => x.id === 1)).toBe(true);
+  });
+
+  it('omitting the options object still defaults to excluding correct questions', () => {
+    markCorrect(1);
+    const q = buildQueue(questions);
+    expect(q).toHaveLength(2);
+    expect(q.some(x => x.id === 1)).toBe(false);
+  });
 });
 
 // ── resetAll ──────────────────────────────────────────────────────────────────
@@ -219,7 +233,7 @@ describe('resetAll', () => {
   it('removes active tab preference (BUG-16)', () => {
     setPersistedTab('ai-hard');
     resetAll();
-    expect(getPersistedTab()).toBe('standard');
+    expect(getPersistedTab()).toBe('random');
   });
 });
 
@@ -241,8 +255,8 @@ describe('getStats', () => {
 
 // ── BUG-16: active tab persistence ───────────────────────────────────────────
 describe('BUG-16 active tab persistence', () => {
-  it('getPersistedTab defaults to "standard"', () => {
-    expect(getPersistedTab()).toBe('standard');
+  it('getPersistedTab defaults to "random"', () => {
+    expect(getPersistedTab()).toBe('random');
   });
 
   it('setPersistedTab persists across reads', () => {
@@ -250,13 +264,13 @@ describe('BUG-16 active tab persistence', () => {
     expect(getPersistedTab()).toBe('ai');
   });
 
-  it('falls back to "standard" for an invalid/corrupted stored value', () => {
+  it('falls back to "random" for an invalid/corrupted stored value', () => {
     localStorage.setItem('quiz_tab', 'not-a-real-tab');
-    expect(getPersistedTab()).toBe('standard');
+    expect(getPersistedTab()).toBe('random');
   });
 
   it('round-trips every valid tab', () => {
-    for (const tab of ['standard', 'standard-hard', 'ai', 'ai-hard']) {
+    for (const tab of ['standard', 'standard-hard', 'ai', 'ai-hard', 'random']) {
       setPersistedTab(tab);
       expect(getPersistedTab()).toBe(tab);
     }

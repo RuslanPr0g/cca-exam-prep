@@ -1,21 +1,85 @@
 {
   "version": 1,
-  "total": 1,
+  "total": 5,
   "questions": [
     {
       "id": "ai-1",
-      "questionText": "[PLACEHOLDER] Your agentic system occasionally calls a tool with a malformed argument that passes schema validation but fails at runtime. What is the most robust way to handle this?",
+      "questionText": "Your warehouse shipment-auditing agent, built on the Claude Agent SDK, calls `fetch_manifest`, `compare_records`, and `flag_discrepancy` in a loop. The loop terminates as soon as `flag_discrepancy` returns a success status. In production, 30% of manifests contain more than one discrepancy, and for those manifests the audit consistently records only the first discrepancy before stopping. What change fixes the premature termination?",
       "options": {
-        "A": "Wrap tool execution in a runtime validation layer that checks semantic constraints beyond the schema, and return structured errors the agent can react to.",
-        "B": "Ask the user to rephrase their request until the tool call succeeds.",
-        "C": "Silently retry the same tool call up to three times.",
-        "D": "Disable the tool entirely until a developer manually reviews the logs."
+        "A": "Continue the loop while `stop_reason` is `\"tool_use\"` and terminate only when the model returns `\"end_turn\"`, regardless of which individual tools have succeeded along the way.",
+        "B": "Have `flag_discrepancy` return a `remaining_discrepancies` count in its result and keep the loop running until that count reaches zero.",
+        "C": "Add a system prompt instruction that the agent must output the phrase \"AUDIT COMPLETE\" only after flagging every discrepancy, and terminate the loop when that phrase appears.",
+        "D": "Raise the loop's iteration cap so that manifests with multiple discrepancies have enough tool-call budget to flag all of them before the loop is cut off."
       },
       "correct": "A",
-      "explanation": "Schema validation only guarantees shape, not semantic correctness. A runtime validation layer catches constraint violations schemas can't express, and returning structured errors lets the agent self-correct instead of failing silently or looping.",
-      "domain": 6,
-      "domainName": "AI-Generated Custom Questions",
-      "task": "AI-1",
+      "explanation": "The loop is treating one tool's success as task completion, but only the model knows whether its audit is finished; `stop_reason: \"end_turn\"` is the authoritative completion signal, and `\"tool_use\"` means keep going. Option B is programmatic, which is the right category, but it relocates termination knowledge into a tool that has no way to know how many discrepancies the model hasn't yet examined. Option C replaces one unreliable signal with another — parsing natural-language phrases for loop termination is a named anti-pattern because phrasing drifts across responses and prompt revisions. Option D misreads the failure: the 30% of multi-discrepancy audits are stopped by the success-status check, not by an exhausted iteration cap, so more budget changes nothing.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.1",
+      "source": "ai"
+    },
+    {
+      "id": "ai-2",
+      "questionText": "A compliance agent drafts regulatory summaries after several tool calls. In about 4% of runs the final summary stops mid-sentence, yet the pipeline marks the task complete. Logs show those runs ended with `stop_reason: \"max_tokens\"`, and the loop's exit condition is \"the response contains no `tool_use` blocks.\" What is the correct fix?",
+      "options": {
+        "A": "Treat only `stop_reason: \"end_turn\"` as completion; when the loop sees `\"max_tokens\"`, continue the conversation so the model can finish the truncated summary.",
+        "B": "Raise `max_tokens` to the model's maximum for the summarization call, which removes the possibility of the response being cut off mid-sentence.",
+        "C": "Detect truncation by checking whether the response's final text block ends in terminal punctuation, and retry the request whenever it does not.",
+        "D": "When the loop sees `stop_reason: \"max_tokens\"`, discard the partial output and restart the task from the beginning with the original prompt."
+      },
+      "correct": "A",
+      "explanation": "The exit condition conflates \"no tool_use blocks\" with \"done\" — a truncated response also contains no tool_use blocks, which is exactly why 4% of runs are marked complete mid-sentence; branching on `stop_reason` distinguishes genuine completion (`\"end_turn\"`) from truncation (`\"max_tokens\"`) and lets the model continue where it stopped. Option B shrinks the window but doesn't close it — long summaries can still hit the higher ceiling, and the loop would still misclassify those runs as complete. Option C is the natural-language-signal anti-pattern: a truncated summary can coincidentally end at a period, and a complete one can end without one. Option D diagnoses the stop reason correctly but recovers wastefully — restarting from scratch re-spends every prior token and, since nothing changed, may simply truncate again, whereas continuing the conversation completes the remaining portion only.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.1",
+      "source": "ai"
+    },
+    {
+      "id": "ai-3",
+      "questionText": "A property-listing enrichment agent calls `geocode_address`, `fetch_school_ratings`, and `fetch_crime_stats` for each listing. To cut token spend, the developer's loop sends only the original instructions plus the single most recent tool result on each iteration, discarding earlier results. Listings that need all three lookups now trigger repeated calls to tools that already ran, and sessions average 11 tool calls where 3 should suffice. What change fixes this?",
+      "options": {
+        "A": "Accumulate the full conversation history across iterations — each assistant `tool_use` turn followed by its `tool_result` — so the model can see which lookups it has already completed and reason across their results.",
+        "B": "Add a system prompt rule stating \"Never call a tool you have already called for the current listing\" so the model stops issuing redundant requests.",
+        "C": "Deduplicate at the executor layer: when the model repeats a call with identical arguments, return the cached earlier result instead of re-executing the lookup against the backend.",
+        "D": "Tighten the iteration cap to 5 tool calls per listing so redundant sessions are cut off early, capping the cost of the repeated lookups."
+      },
+      "correct": "A",
+      "explanation": "The agentic loop depends on tool results persisting in conversation history; because each iteration exposes only the latest result, the model literally cannot know which lookups already ran, so it re-requests them — accumulating history restores that knowledge and drops sessions back toward 3 calls. Option B instructs the model to avoid something it has no information to detect: the record of prior calls was discarded, so the rule is unenforceable regardless of prompt strength. Option C cuts backend execution cost, which is real but partial — the model still sees only one result per iteration, so it still can't reason across the three datasets or recognize completion, and the 11-call loop persists. Option D treats the symptom by truncating it: listings needing all three lookups would now routinely terminate incomplete rather than cheaply.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.1",
+      "source": "ai"
+    },
+    {
+      "id": "ai-4",
+      "questionText": "A trip-planning agent regularly emits a single assistant turn containing three `tool_use` blocks — `search_flights`, `search_hotels`, and `search_transfers`. Your loop executes only the first block and sends back one `tool_result`. The next API call then fails with a 400 error citing missing `tool_result` blocks. What is the correct handling?",
+      "options": {
+        "A": "Execute every `tool_use` block from the assistant turn and return one `tool_result` per `tool_use` ID, all inside the single next user message.",
+        "B": "Return the flight result immediately, then supply the hotel and transfer results in two subsequent user messages as each remaining search completes.",
+        "C": "Set `disable_parallel_tool_use` on the request's `tool_choice` so the model is constrained to requesting one tool per assistant turn.",
+        "D": "Add a system prompt instruction telling the agent to call at most one tool per response so the loop's single-result assumption holds."
+      },
+      "correct": "A",
+      "explanation": "Parallel tool use is valid API output: when an assistant turn contains multiple `tool_use` blocks, the immediately following user message must contain a matching `tool_result` for every block's ID, which is what option A implements — and the three independent searches then run in one round trip. Option B violates the protocol that produced the 400 in the first place: the results cannot be spread across later messages; they all belong in the next user message. Option C uses a real parameter and would deterministically stop the errors, but it fixes the model to accommodate a broken loop — turning one round trip into three for independent lookups and leaving the loop unable to handle valid output if the setting is ever removed. Option D is the probabilistic version of C: the model will sometimes still batch calls, and every time it does, the 400 returns.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.1",
+      "source": "ai"
+    },
+    {
+      "id": "ai-5",
+      "questionText": "Your catalog-onboarding system uses a coordinator that delegates to three subagents: image tagging, description writing, and price validation. A teammate prototypes letting the price-validation subagent invoke the image-tagging subagent directly whenever it detects a photo/price mismatch, skipping the coordinator round trip and cutting that path's latency by 15%. How should you evaluate this proposal?",
+      "options": {
+        "A": "Reject it: direct subagent-to-subagent invocation fragments orchestration — the coordinator can no longer observe, sequence, or retry tagging work it never knew was delegated.",
+        "B": "Approve it: the coordinator still receives both subagents' final outputs at the end of the run, so observability is preserved and the 15% latency gain comes at no architectural cost.",
+        "C": "Reject it: routing the tagging output through the price agent's context roughly doubles token consumption compared with routing the same work through the coordinator.",
+        "D": "Approve it on the condition that the price-validation subagent appends the full tagging transcript to its final report, restoring the coordinator's view of what happened."
+      },
+      "correct": "A",
+      "explanation": "The hub-and-spoke pattern exists so one place holds delegation state: when subagents invoke each other directly, a failed or incomplete tagging call happens outside the coordinator's knowledge, so nothing can detect it mid-run, retry it, or account for it when sequencing the remaining work — a 15% latency gain on one path doesn't offset losing recovery over that path entirely. Option B mistakes receiving final outputs for orchestration: results arriving at the end doesn't help the coordinator manage failures while the run is in progress. Option C rejects for an inaccurate reason — coordinator-routed work also passes results through two agent contexts, so token cost is comparable; the real cost is control, not tokens. Option D is a near-miss: an appended transcript gives after-the-fact visibility, but reading about a delegation later is not the same as being able to sequence or recover it, and it bloats the price agent's report besides.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.2",
       "source": "ai"
     }
   ]

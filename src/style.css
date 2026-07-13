@@ -200,6 +200,11 @@ body {
   box-shadow: 0 12px 30px rgba(232,121,201,.3);
 }
 
+.tab-btn[data-tab="random"].active {
+  background: linear-gradient(135deg, rgba(45,212,191,.5), rgba(56,189,248,.45));
+  box-shadow: 0 12px 30px rgba(45,212,191,.3);
+}
+
 /* ── Buttons ──────────────────────────────────────────────────────────────── */
 button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 
