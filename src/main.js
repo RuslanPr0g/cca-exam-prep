@@ -49,6 +49,13 @@ const ROUTE_TABS = Object.fromEntries(
 function routeFromTab(tab) { return TAB_ROUTES[tab] ?? 'random'; }
 
 function currentRoute() {
+  // A direct/refreshed visit to a pretty path (e.g. /random) 404s server-side
+  // on GitHub Pages and gets redirected here via public/404.html, which packs
+  // the route it couldn't serve into `?route=` on the real root URL instead.
+  // That takes priority over the pathname whenever present.
+  const fromQuery = new URLSearchParams(location.search).get('route');
+  if (fromQuery !== null) return fromQuery.replace(/^\/+|\/+$/g, '');
+
   const base = import.meta.env.BASE_URL; // e.g. '/cca-exam-prep/'
   let path = location.pathname;
   if (path.startsWith(base)) path = path.slice(base.length);

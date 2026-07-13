@@ -3,16 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <title>Redirecting…</title>
-    <!-- GitHub Pages serves this file for any path that isn't the literal
-         site root (it has no server-side rewrites for a single-page app).
-         This app's own routing lives entirely in src/main.js and only
-         understands a fixed handful of tab routes; any other path — typos,
-         stale bookmarks, deep links to routes that no longer exist — should
-         just land on the default tab. Base path below must match
-         vite.config.js's `base` (this file is copied as-is, not processed
-         by Vite, so it can't read that value at build time). -->
+    <!-- GitHub Pages serves this file for any path that isn't a real file on
+         disk (it has no server-side rewrites) — including every one of this
+         app's pretty tab routes (/regular, /random, ...), since only the site
+         root actually exists as index.html. Redirecting straight back to the
+         same pretty path (what this file used to do) just 404s again —
+         infinite loop. Instead, redirect to the real root with the intended
+         route packed into a query string; src/main.js reads `?route=` back
+         out and replaceState()s the pretty URL back in once the real app has
+         loaded (see currentRoute() in src/main.js). Base path below must
+         match vite.config.js's `base` (this file is copied as-is, not
+         processed by Vite, so it can't read that value at build time). -->
     <script>
-      location.replace('/cca-exam-prep/random');
+      var base = '/cca-exam-prep/';
+      var route = location.pathname.slice(base.length);
+      location.replace(base + '?route=' + encodeURIComponent(route));
     </script>
   </head>
   <body></body>
