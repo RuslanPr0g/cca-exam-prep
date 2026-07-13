@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "total": 5,
+  "total": 10,
   "questions": [
     {
       "id": "ai-1",
@@ -80,6 +80,86 @@
       "domain": 1,
       "domainName": "Agentic Architecture &amp; Orchestration",
       "task": "1.2",
+      "source": "ai"
+    },
+    {
+      "id": "ai-6",
+      "questionText": "A legal-review system analyzes 90-page merger agreements. The coordinator splits each document among three clause-analysis subagents by page range (1–30, 31–60, 61–90). In roughly 20% of runs, subagents misinterpret clauses that reference the 4-page defined-terms section at the front of the document — for example, page 70 uses \"Material Adverse Effect\" as defined on page 5, and the third subagent applies the plain-English meaning instead. What is the most effective fix?",
+      "options": {
+        "A": "Give every subagent the full 90-page document as context and instruct each one to analyze and report only on its assigned page range.",
+        "B": "Decompose along self-contained semantic boundaries (articles or clause topics) instead of page ranges, and include the 4-page defined-terms section in every subagent's context.",
+        "C": "Add a synthesis subagent that receives all three analyses and reconciles any conclusions that conflict with each other before the final report is produced.",
+        "D": "Run the three subagents sequentially instead of in parallel, so each one can read the analyses produced by the subagents that ran before it."
+      },
+      "correct": "B",
+      "explanation": "The failure is a decomposition that severs semantic dependencies: page ranges split content from the definitions it relies on. Option B fixes both halves — boundaries that keep dependent content together, plus the small shared dependency (4 pages) replicated into each subagent's context at negligible cost. Option A also restores correctness but at the wrong scale: it triples per-subagent input to 90 pages each when the actual shared dependency is only the 4-page definitions section, largely defeating the point of decomposing. Option C patches downstream — a synthesis pass can only reconcile conclusions the subagents surfaced, and a subagent that silently applied the plain-English meaning produces no conflict to detect. Option D sacrifices parallelism without solving the problem: the second and third subagents see prior analyses, not the defined-terms section, unless an earlier agent happened to quote it.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.2",
+      "source": "ai"
+    },
+    {
+      "id": "ai-7",
+      "questionText": "An insurance-claims triage coordinator routes claims to specialist subagents (fraud screening, damage assessment, payout calculation), but performs damage assessment itself for claims it judges \"simple,\" reasoning that a subagent round trip is wasteful. In long sessions, after roughly 40 claims, the coordinator's routing decisions degrade: it misroutes claim types it handled correctly earlier in the session. What architectural change best addresses this?",
+      "options": {
+        "A": "Enable context compaction on the coordinator's session so older claim analyses are summarized automatically once the context approaches its limit.",
+        "B": "Replace the coordinator every 10 claims with a freshly spawned instance, handing off a summary of routing decisions made so far in the session.",
+        "C": "Delegate every assessment — including simple ones — to subagents, keeping the coordinator's context reserved for orchestration state rather than analysis transcripts.",
+        "D": "Add a system prompt instruction directing the coordinator to keep its own damage assessments brief so they consume less of the session's context."
+      },
+      "correct": "C",
+      "explanation": "The coordinator is degrading because its context fills with damage-assessment working material — photos descriptions, line-item reasoning — that crowds out the orchestration state routing depends on; around claim 40, earlier routing patterns are effectively displaced. Option C fixes the cause: a thin coordinator whose context holds only task state scales with the number of claims, not the depth of each analysis. Option A treats the symptom — compaction buys more claims per session, but analysis transcripts still dilute the context, and lossy summaries of routing history are exactly what you don't want compacted. Option B is the same symptom-treatment with extra failure surface: the handoff summary must capture everything routing depends on, and the mixed-concern design that caused the bloat carries over to each new instance. Option D reduces the leak rate rather than plugging it — briefer assessments still accumulate, and it relies on probabilistic compliance besides.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.2",
+      "source": "ai"
+    },
+    {
+      "id": "ai-8",
+      "questionText": "A restaurant-inspection platform generates compliance reports using three subagents: photo analysis, violation-history retrieval, and report writing. To maximize throughput, the coordinator spawns all three in parallel. Reports frequently ship missing photo findings, because the report writer starts before photo analysis — the slowest of the three at about 30 seconds — has returned. How should the coordinator schedule the subagents?",
+      "options": {
+        "A": "Keep all three parallel, but have the report writer retry in a loop, re-checking for photo findings every few seconds until they become available.",
+        "B": "Run all three subagents strictly sequentially — photo analysis, then violation history, then report writing — so every dependency is guaranteed to be satisfied.",
+        "C": "Keep all three parallel, and instruct the report writer to leave placeholder sections for photo findings that a second-pass subagent fills in once analysis completes.",
+        "D": "Spawn photo analysis and violation-history retrieval in parallel, then invoke the report writer only after both have returned, passing it their outputs."
+      },
+      "correct": "D",
+      "explanation": "Parallelism is for independent tasks; the report writer consumes the other two subagents' outputs, so it belongs after them. Option D preserves the real available concurrency — photo analysis and history retrieval don't depend on each other — while making the dependent step wait for its inputs, bounding total latency near the 30-second slowest branch. Option B is correct but over-serialized: it forfeits the parallelism between the two independent tasks and adds their durations for no benefit. Option A bolts a polling loop onto a scheduling problem — subagents don't share live state to poll, and even simulated via re-invocation it burns tokens waiting instead of just sequencing the dependency. Option C ships the race condition into the artifact: a placeholder-and-patch second pass adds a full extra invocation per report and risks stitched-in findings that contradict the surrounding text the writer produced without them.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.2",
+      "source": "ai"
+    },
+    {
+      "id": "ai-9",
+      "questionText": "A payroll-migration coordinator needs a subagent to map fields between a legacy HR schema and a new provider's schema. The developer passes the coordinator's entire 60,000-token session transcript to the subagent — including lengthy vendor-contract negotiations unrelated to schema work. The subagent's mappings are correct but slow to produce, and it occasionally cites contract terms as if they were mapping constraints. What is the correct way to pass context here?",
+      "options": {
+        "A": "Build a focused task prompt for the subagent containing only the two schema definitions, the mapping requirements, and explicit acceptance criteria — not the coordinator's transcript.",
+        "B": "Pass the full transcript but prepend an instruction telling the subagent to disregard any content not related to schema mapping when producing its output.",
+        "C": "Summarize the 60,000-token transcript down to a few thousand tokens with a separate compression call, and pass the summary as the subagent's context.",
+        "D": "Configure the subagent with a larger context window so the full transcript fits with ample headroom and no longer degrades its processing."
+      },
+      "correct": "A",
+      "explanation": "Subagents start fresh, which is an advantage: the coordinator should curate exactly the inputs the task needs — schemas, requirements, success criteria — rather than exporting its own history. Option A eliminates both symptoms at the source: less input means faster processing, and absent contract text can't be miscited as a constraint. Option B leaves the distraction in context and asks the model to probabilistically ignore it — the observed miscitations are evidence that irrelevant content in context influences output regardless of instructions. Option C is better than the raw transcript but still the wrong operation: blanket compression of mostly irrelevant material may lossily mangle the schema details that actually matter while still carrying negotiation residue in. Option D solves a problem the scenario doesn't have — the 60,000 tokens already fit; the failure is relevance and dilution, not capacity.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.3",
+      "source": "ai"
+    },
+    {
+      "id": "ai-10",
+      "questionText": "A retail-analytics coordinator spawns one inventory-audit subagent per store, all at once, for a 25-store chain. Under the account's rate limits — which comfortably sustain about 5 concurrent subagents — roughly 40% of the spawned subagents fail with 429 errors, and the nightly audit completes with gaps. How should the spawning be redesigned?",
+      "options": {
+        "A": "Switch to fully sequential spawning: run one store's audit to completion before starting the next, eliminating concurrent requests entirely.",
+        "B": "Keep spawning all 25 at once, but add exponential-backoff retries to each subagent so that those receiving 429 responses eventually succeed.",
+        "C": "Run the subagents through a bounded worker pool sized to the rate limit — about 5 concurrent — queuing the remaining stores until a slot frees up.",
+        "D": "Ask the API provider for a rate-limit increase sized to 25 concurrent subagents, keeping the current spawn-everything-at-once design unchanged."
+      },
+      "correct": "C",
+      "explanation": "The stated limit — about 5 sustainable concurrent subagents — is the load-bearing constraint: correct design spawns up to the limit and queues the rest, getting maximum safe parallelism (roughly 5× faster than sequential) with no 429 storm. Option A eliminates the errors but ignores the same number: running one at a time when 5 are sustainable makes the nightly audit about five times longer than necessary. Option B keeps the thundering herd and merely retries into it — backoff is a good companion to a pool, but as the sole fix the 25-way contention persists and completion time becomes erratic. Option D outsources the fix: even if granted, the design fails again at the next constraint change (a 40-store expansion, a tightened quota), whereas a pool adapts by changing one number.",
+      "domain": 1,
+      "domainName": "Agentic Architecture &amp; Orchestration",
+      "task": "1.3",
       "source": "ai"
     }
   ]
