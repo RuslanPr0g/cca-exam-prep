@@ -82,7 +82,7 @@ function hasPending(tab) {
 async function init() {
   try {
     // BUG-03: handle fetch errors gracefully
-    const res = await fetch('/questions.json');
+    const res = await fetch(`${import.meta.env.BASE_URL}questions.json`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     allQuestions = data.questions ?? [];
@@ -97,7 +97,7 @@ async function init() {
   }
 
   try {
-    const aiRes = await fetch('/ai-questions.json');
+    const aiRes = await fetch(`${import.meta.env.BASE_URL}ai-questions.json`);
     if (!aiRes.ok) throw new Error(`HTTP ${aiRes.status}`);
     const aiData = await aiRes.json();
     aiQuestions = aiData.questions ?? [];
