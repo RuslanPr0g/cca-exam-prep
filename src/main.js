@@ -394,13 +394,14 @@ function initSpaceBackground() {
     spaceBg.appendChild(star);
   }
 
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 1; i++) {
     const shootingStar = document.createElement('div');
     shootingStar.className = 'shooting-star';
     shootingStar.style.top      = `${Math.random() * 50}%`;
     shootingStar.style.left     = `${Math.random() * 100}%`;
-    shootingStar.style.animationDuration = `${Math.random() * 10 + 15}s`;
-    shootingStar.style.animationDelay    = `${Math.random() * 56}s`;
+    // Full cycle (streak + hidden gap) is ~60s, so a streak fires roughly once a minute.
+    shootingStar.style.animationDuration = `${Math.random() * 20 + 55}s`;
+    shootingStar.style.animationDelay    = `${Math.random() * 60}s`;
     spaceBg.appendChild(shootingStar);
   }
 }

@@ -90,9 +90,10 @@ body {
 }
 
 @keyframes shoot {
-  0%   { transform: translate(0, 0) rotate(135deg); opacity: 1; }
-  80%  { opacity: 1; }
-  100% { transform: translate(700px, 700px) rotate(135deg); opacity: 0; }
+  0%    { transform: translate(0, 0) rotate(135deg); opacity: 1; }
+  2%    { transform: translate(700px, 700px) rotate(135deg); opacity: 1; }
+  2.5%  { opacity: 0; }
+  100%  { opacity: 0; }
 }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
