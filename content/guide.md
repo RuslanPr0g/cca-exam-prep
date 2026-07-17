@@ -12,6 +12,8 @@ The exam questions are based on realistic industry scenarios: building agentic s
 
 > **📚 Additional learning resource:** For even more detailed learning material and another set of mock practice exam tasks, see the [Claude Certification Guide — Learning Progress](https://claudecertificationguide.com/learn/progress). It complements this study guide with extra explanations and additional practice questions to help you prepare.
 
+> **📖 Source:** This study guide's text is taken from the [paullarionov/claude-certified-architect](https://github.com/paullarionov/claude-certified-architect) GitHub repository.
+
 ---
 
 ## Target Candidate
