@@ -5,6 +5,8 @@ import {
   toggleHardQuestion,   // BUG-01: renamed from toggleHard to avoid shadowing
   isHard,
   resetAll,
+  resetProgressForIds,
+  resetGuide,
   getStats,
   getHardIds,
   getCorrectIds,
@@ -35,6 +37,24 @@ const TABS = Object.keys(TAB_META);
 function tabSource(tab) { return tab.startsWith('ai') ? 'ai' : 'standard'; }
 function tabIsHard(tab)  { return tab.endsWith('-hard'); }
 function tabIsRandom(tab) { return tab === 'random'; }
+
+// What the ↺ Reset button clears depends on the page you're on:
+//   Regular / Regular Hard → 'regular' (standard question progress)
+//   AI / AI Hard           → 'ai'      (AI question progress)
+//   Study Guide            → 'guide'   (chapter reading progress)
+//   Random (mixes both)    → 'all'     (everything)
+function resetScopeForTab(tab) {
+  if (tab === 'guide')    return 'guide';
+  if (tabIsRandom(tab))   return 'all';
+  return tabSource(tab) === 'ai' ? 'ai' : 'regular';
+}
+
+const RESET_SCOPE_META = {
+  regular: { title: 'Reset regular question progress',    confirm: 'Reset Regular progress (correct answers + hard bookmarks)?' },
+  ai:      { title: 'Reset AI question progress',         confirm: 'Reset AI progress (correct answers + hard bookmarks)?' },
+  guide:   { title: 'Reset study guide reading progress', confirm: 'Reset Study Guide reading progress?' },
+  all:     { title: 'Reset all progress',                 confirm: 'Reset all progress (correct answers + hard bookmarks)?' },
+};
 
 // ── URL routing ───────────────────────────────────────────────────────────────
 // Random is the default: bare root, or any path that doesn't match one of the
@@ -204,6 +224,8 @@ function updateTabUI() {
   // Widen the layout for the Guide's two-pane reading view (see .guide-active
   // in style.css); quiz tabs keep the narrow single-column width.
   document.body.classList.toggle('guide-active', activeTab === 'guide');
+  // Reset button is page-scoped — keep its tooltip in sync with what it clears.
+  btnReset.title = RESET_SCOPE_META[resetScopeForTab(activeTab)].title;
   // .ai-mode is decided per-question in showQuestion() now, not per-tab —
   // Random mixes both sources, so a tab-level decision would be wrong there.
 }
@@ -267,7 +289,7 @@ function renderEmptyState() {
   const actions = TABS
     .filter(tab => tab !== activeTab && hasPending(tab))
     .map(tab => ({ label: `Go to ${TAB_META[tab].label}`, onClick: () => switchTab(tab) }));
-  actions.push({ label: '↺ Reset All Progress', onClick: handleReset, danger: true });
+  actions.push({ label: '↺ Reset All Progress', onClick: handleResetAll, danger: true });
 
   emptyActions.innerHTML = '';
   actions.forEach(a => {
@@ -388,8 +410,36 @@ function handleToggleHard() {
   updateStats();
 }
 
+// Header ↺ Reset button: scoped to the page you're currently on (see
+// resetScopeForTab). Rebuilds the current view in place rather than reloading
+// so you stay on the same tab.
 function handleReset() {
-  if (!confirm('Reset all progress (correct answers + hard bookmarks)?')) return;
+  const scope = resetScopeForTab(activeTab);
+  if (!confirm(RESET_SCOPE_META[scope].confirm)) return;
+
+  switch (scope) {
+    case 'guide':
+      resetGuide();
+      // Refresh ticks/progress/mark-read without re-selecting the chapter.
+      // (Guide is always loaded here — the button only shows on the guide tab.)
+      refreshGuideReadUI();
+      return;
+    case 'ai':
+      resetProgressForIds(aiQuestions.map(q => q.id));
+      break;
+    case 'regular':
+      resetProgressForIds(allQuestions.map(q => q.id));
+      break;
+    default: // 'all' (Random mixes both sources)
+      resetProgressForIds([...allQuestions, ...aiQuestions].map(q => q.id));
+  }
+  showActiveTab();
+}
+
+// Empty-state "Reset All Progress" escape hatch: always a full wipe, matching
+// its explicit label (unlike the scoped header button above).
+function handleResetAll() {
+  if (!confirm('Reset ALL progress (every question set + study guide)?')) return;
   resetAll();
   location.reload();
 }

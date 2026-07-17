@@ -143,6 +143,33 @@ export function resetAll() {
 }
 
 /**
+ * Reset progress (correct answers + hard bookmarks) for a specific set of
+ * question ids only. Correct/hard ids live in single shared sets across all
+ * sources, so the scoped reset button passes just the ids of the source it's
+ * reset (e.g. the Regular tab passes standard ids, leaving AI progress intact).
+ */
+export function resetProgressForIds(ids) {
+  const targets = ids instanceof Set ? ids : new Set(ids);
+  const correct = getCorrectIds();
+  const hard    = getHardIds();
+  for (const id of targets) {
+    correct.delete(id);
+    hard.delete(id);
+  }
+  saveSet(KEY_CORRECT, correct);
+  saveSet(KEY_HARD, hard);
+  _cacheCorrect = correct;
+  _cacheHard    = hard;
+}
+
+/** Reset Study Guide reading progress only (read chapters + resume point). */
+export function resetGuide() {
+  localStorage.removeItem(KEY_GUIDE);
+  localStorage.removeItem(KEY_GUIDE_LAST);
+  _cacheGuide = null;
+}
+
+/**
  * Stats snapshot for the header, scoped to the given question set.
  * Counts must be filtered to `questions` (not read as global set sizes) —
  * otherwise progress from one source (e.g. standard) leaks into another

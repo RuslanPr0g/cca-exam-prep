@@ -14,6 +14,8 @@ import {
   shuffle,
   buildQueue,
   resetAll,
+  resetProgressForIds,
+  resetGuide,
   getStats,
   getPersistedTab,
   setPersistedTab,
@@ -234,6 +236,69 @@ describe('resetAll', () => {
     setPersistedTab('ai-hard');
     resetAll();
     expect(getPersistedTab()).toBe('random');
+  });
+});
+
+// ── resetProgressForIds (scoped reset button) ────────────────────────────────
+describe('resetProgressForIds', () => {
+  it('clears correct + hard only for the given ids, leaving others intact', () => {
+    markCorrect(1);
+    markCorrect('ai-1');
+    toggleHardQuestion(2);
+    toggleHardQuestion('ai-2');
+
+    // Reset only the standard ids — AI progress must survive.
+    resetProgressForIds([1, 2]);
+
+    expect(isCorrect(1)).toBe(false);
+    expect(isHard(2)).toBe(false);
+    expect(isCorrect('ai-1')).toBe(true);
+    expect(isHard('ai-2')).toBe(true);
+  });
+
+  it('accepts a Set as well as an array', () => {
+    markCorrect(5);
+    toggleHardQuestion(6);
+    resetProgressForIds(new Set([5, 6]));
+    expect(isCorrect(5)).toBe(false);
+    expect(isHard(6)).toBe(false);
+  });
+
+  it('persists the trimmed sets to localStorage', () => {
+    markCorrect(1);
+    markCorrect(2);
+    resetProgressForIds([1]);
+    expect(JSON.parse(localStorage.getItem('quiz_correct'))).toEqual([2]);
+  });
+
+  it('ignores ids that were never set', () => {
+    markCorrect(1);
+    resetProgressForIds([99]);
+    expect(isCorrect(1)).toBe(true);
+  });
+
+  it('does not touch guide reading progress', () => {
+    toggleHardQuestion(1);
+    localStorage.setItem('guide_read', JSON.stringify(['ch-1']));
+    resetProgressForIds([1]);
+    expect(JSON.parse(localStorage.getItem('guide_read'))).toEqual(['ch-1']);
+  });
+});
+
+// ── resetGuide (scoped reset on the Study Guide page) ─────────────────────────
+describe('resetGuide', () => {
+  it('clears guide read set and resume point, leaving quiz progress intact', () => {
+    markCorrect(1);
+    toggleHardQuestion(2);
+    localStorage.setItem('guide_read', JSON.stringify(['ch-1', 'ch-2']));
+    localStorage.setItem('guide_last', 'ch-2');
+
+    resetGuide();
+
+    expect(localStorage.getItem('guide_read')).toBe(null);
+    expect(localStorage.getItem('guide_last')).toBe(null);
+    expect(isCorrect(1)).toBe(true);
+    expect(isHard(2)).toBe(true);
   });
 });
 

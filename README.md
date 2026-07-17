@@ -15,7 +15,7 @@ Answer real exam-style multiple-choice questions and get an explanation after ev
 - **🎲 Random** — a random mix of every question
 - **📖 Guide** — the full study guide to read chapter by chapter, with a table of contents and per-chapter "read" tracking saved in your browser
 
-Bookmark any question mid-quiz with the ☆ button to add it to its "Hard" tab. A reset button clears your progress if you want to start fresh.
+Bookmark any question mid-quiz with the ☆ button to add it to its "Hard" tab. The ↺ Reset button is scoped to the page you're on — it clears just the Regular questions on the Regular/Regular Hard tabs, just the AI questions on the AI/AI Hard tabs, and just your reading progress on the Guide (Random clears everything, since it mixes both sets).
 
 No account, no sign-up, no tracking — everything lives in your browser.
 
