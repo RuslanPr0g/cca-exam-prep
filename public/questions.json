@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "total": 113,
+  "total": 141,
   "questions": [
     {
       "id": 1,
@@ -1696,6 +1696,426 @@
       "domain": 4,
       "domainName": "Prompt Engineering & Structured Output",
       "task": "4.2"
+    },
+    {
+      "id": 114,
+      "questionText": "The document analysis subagent encounters a corrupted PDF file that it cannot parse. When designing the system’s error handling, what is the most effective way to handle this failure?",
+      "options": {
+        "A": "Return an error with context to the coordinator agent, allowing it to decide how to proceed.",
+        "B": "Silently skip the corrupted document and continue processing the remaining files to avoid interrupting the workflow.",
+        "C": "Automatically retry parsing the document three times with exponential backoff before reporting a failure.",
+        "D": "Throw an exception that terminates the entire research workflow."
+      },
+      "correct": "A",
+      "explanation": "Returning an error with context to the coordinator is the most effective approach because it lets the coordinator make an informed decision—skip the file, try an alternative parsing method, or notify the user—while maintaining visibility into the failure.",
+      "domain": 5,
+      "domainName": "Context Management & Reliability",
+      "task": "5.3"
+    },
+    {
+      "id": 115,
+      "questionText": "Your automated reviews find real issues, but developers report the feedback is not actionable. Findings include phrases like “complex ticket routing logic” or “potential null pointer” without specifying what exactly to change. When you add detailed instructions like “always include concrete fix suggestions,” the model still produces inconsistent output—sometimes detailed, sometimes vague. Which prompting technique most reliably produces consistently actionable feedback?",
+      "options": {
+        "A": "Further refine instructions with more explicit requirements for each part of the feedback format (location, issue, severity, proposed fix).",
+        "B": "Expand the context window to include more surrounding codebase so the model has enough information to propose concrete fixes.",
+        "C": "Implement a two-pass approach where one prompt identifies issues and a second generates fixes, allowing specialization.",
+        "D": "Add 3–4 few-shot examples showing the exact required format: identified issue, location in code, concrete fix suggestion."
+      },
+      "correct": "D",
+      "explanation": "Few-shot examples are the most effective technique for achieving consistent output format when instructions alone produce variable results. Providing 3–4 examples that show the exact desired structure (issue, location, concrete fix) gives the model a concrete pattern to follow, which is more reliable than abstract instructions.",
+      "domain": 4,
+      "domainName": "Prompt Engineering & Structured Output",
+      "task": "4.2"
+    },
+    {
+      "id": 116,
+      "questionText": "You asked Claude Code to implement a function that transforms API responses into an internal normalized format. After two iterations, the output structure still doesn’t match expectations—some fields are nested differently and timestamps are formatted incorrectly. You described requirements in prose, but Claude interprets them differently each time. Which approach is most effective for the next iteration?",
+      "options": {
+        "A": "Write a JSON schema describing the expected output structure and validate Claude’s output against it after each iteration.",
+        "B": "Provide 2–3 concrete input-output examples showing the expected transformation for representative API responses.",
+        "C": "Rewrite requirements with more technical precision, specifying exact field mappings, nesting rules, and timestamp format strings.",
+        "D": "Ask Claude to explain its current understanding of the requirements to identify where interpretations diverge."
+      },
+      "correct": "B",
+      "explanation": "Concrete input-output examples remove ambiguity inherent in prose descriptions by showing Claude the exact expected transformation results. This directly addresses the root cause—misinterpretation of textual requirements—by providing unambiguous patterns for field nesting and timestamp formatting.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration & Workflows",
+      "task": "3.5"
+    },
+    {
+      "id": 117,
+      "questionText": "Your team created a `/analyze-codebase` skill that performs deep code analysis—dependency scanning, test coverage counts, and code quality metrics. After running the command, team members report Claude becomes less responsive in the session and loses the context of the original task. How do you most effectively fix this while keeping full analysis capabilities?",
+      "options": {
+        "A": "Add `context: fork` in the skill frontmatter to run the analysis in an isolated subagent context.",
+        "B": "Add `model: haiku` in frontmatter to use a faster, cheaper model for analysis.",
+        "C": "Split the skill into three smaller skills, each producing less output.",
+        "D": "Add instructions to the skill to compress all results into a short summary before displaying them."
+      },
+      "correct": "A",
+      "explanation": "`context: fork` runs the analysis in an isolated subagent context so the large output does not pollute the main session’s context window and Claude does not lose track of the original task. It preserves full analysis capability while keeping the main session responsive.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration & Workflows",
+      "task": "3.2"
+    },
+    {
+      "id": 118,
+      "questionText": "Your team’s CLAUDE.md grew beyond 500 lines mixing TypeScript conventions, testing guidance, API patterns, and deployment procedures. Developers find it hard to locate and update the right sections. What approach does Claude Code support to organize project-level instructions into focused topical modules?",
+      "options": {
+        "A": "Define a `.claude/config.yaml` mapping file patterns to specific sections inside CLAUDE.md.",
+        "B": "Create separate Markdown files in `.claude/rules/`, each covering one topic (e.g., `testing.md`, `api-conventions.md`).",
+        "C": "Split instructions into README.md files in relevant subdirectories that Claude automatically loads as instructions.",
+        "D": "Create multiple files named CLAUDE.md at different levels of the directory tree, each overriding parent instructions."
+      },
+      "correct": "B",
+      "explanation": "Claude Code supports a `.claude/rules/` directory where you can create separate Markdown files for topical guidance (e.g., `testing.md`, `api-conventions.md`), allowing teams to organize large instruction sets into focused, maintainable modules.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration & Workflows",
+      "task": "3.1"
+    },
+    {
+      "id": 119,
+      "questionText": "You create a custom skill `/explore-alternatives` that your team uses to brainstorm and evaluate implementation approaches before choosing one. Developers report that after running the skill, subsequent Claude responses are influenced by the alternatives discussion—sometimes referencing rejected approaches or retaining exploration context that interferes with actual implementation. How should you most effectively configure this skill?",
+      "options": {
+        "A": "Use the `!` prefix in the skill to run exploration logic as a bash subprocess.",
+        "B": "Add `context: fork` in the skill frontmatter.",
+        "C": "Split into two skills—`/explore-start` and `/explore-end`—to mark boundaries when exploration context should be discarded.",
+        "D": "Create the skill in `~/.claude/skills/` instead of `.claude/skills/`."
+      },
+      "correct": "B",
+      "explanation": "`context: fork` runs the skill in an isolated subagent context so exploration discussions do not pollute the main conversation history. This prevents rejected approaches and brainstorming context from influencing subsequent implementation work.",
+      "domain": 3,
+      "domainName": "Claude Code Configuration & Workflows",
+      "task": "3.2"
+    },
+    {
+      "id": 120,
+      "questionText": "Your team wants to add a GitHub MCP server for searching PRs and checking CI status via Claude Code. Each of six developers has their own personal GitHub access token. You want consistent tooling across the team without committing credentials to version control. Which configuration approach is most effective?",
+      "options": {
+        "A": "Have each developer add the server in user scope via `claude mcp add --scope user`.",
+        "B": "Create an MCP server wrapper that reads tokens from a `.env` file and proxies GitHub API calls, then add the wrapper to the project `.mcp.json`.",
+        "C": "Add the server to the project `.mcp.json` using environment variable substitution (`${GITHUB_TOKEN}`) for auth and document the required environment variable in the project README.",
+        "D": "Configure the server in project scope with a placeholder token, then tell developers to override it in their local config."
+      },
+      "correct": "C",
+      "explanation": "A project `.mcp.json` with environment variable substitution is idiomatic: it provides a single version-controlled source of truth for MCP configuration while letting each developer supply credentials via environment variables. Documenting the variable makes onboarding easy without committing secrets.",
+      "domain": 2,
+      "domainName": "Tool Design & MCP Integration",
+      "task": "2.4"
+    },
+    {
+      "id": 121,
+      "questionText": "You’re adding error-handling wrappers around external API calls across a 120-file codebase. The work has three phases: (1) discover all call sites and patterns, (2) collaboratively design the error-handling approach, and (3) implement wrappers consistently. In Phase 1, Claude generates large output listing hundreds of call sites with context, quickly filling the context window before discovery finishes. Which approach is most effective to complete the task while maintaining implementation consistency?",
+      "options": {
+        "A": "Use an Explore subagent for Phase 1 to isolate verbose discovery output and return a summary, then continue Phases 2–3 in the main conversation.",
+        "B": "Do all phases in the main conversation, periodically using `/compact` to reduce context usage while moving through files.",
+        "C": "Switch to headless mode with `--continue`, passing explicit context summaries between batch calls to maintain continuity.",
+        "D": "Define the error-handling pattern in CLAUDE.md, then process files in batches across multiple sessions relying on the shared memory file for consistency."
+      },
+      "correct": "A",
+      "explanation": "An Explore subagent isolates the verbose discovery output in a separate context and returns only a concise summary to the main conversation. This preserves the main context window for the collaborative design and consistent implementation phases where retained context is most valuable.",
+      "domain": 5,
+      "domainName": "Context Management & Reliability",
+      "task": "5.4"
+    },
+    {
+      "id": 122,
+      "questionText": "Production logs show that for simple requests like “refund for order #1234,” your agent resolves the issue in 3–4 tool calls with 91% success. But for complex requests like “I was billed twice, my discount didn’t apply, and I want to cancel,” the agent averages 12+ tool calls with only 54% success—often investigating issues sequentially and fetching redundant customer data for each. What change most effectively improves handling of complex requests?",
+      "options": {
+        "A": "Add explicit verification checkpoints between stages, requiring the agent to record progress after resolving each issue before moving to the next.",
+        "B": "Reduce the number of tools by combining `get_customer`, `lookup_order`, and billing-related tools into a single `investigate_issue` tool.",
+        "C": "Decompose the request into separate issues, then investigate each in parallel using shared customer context before synthesizing a final resolution.",
+        "D": "Add few-shot examples to the system prompt demonstrating ideal tool-call sequences for various multi-faceted billing scenarios."
+      },
+      "correct": "C",
+      "explanation": "Decomposing into separate issues and investigating in parallel with shared customer context fixes both key problems: it eliminates redundant data retrieval by reusing shared context across issues and reduces total tool-call loops by parallelizing investigation before synthesizing a single resolution.",
+      "domain": 1,
+      "domainName": "Agentic Architecture & Orchestration",
+      "task": "1.6"
+    },
+    {
+      "id": 123,
+      "questionText": "Production logs show a pattern: customers reference specific amounts (e.g., “the 15% discount I mentioned”), but the agent responds with incorrect values. Investigation shows these details were mentioned 20+ turns ago and condensed into vague summaries like “promotional pricing was discussed.” What fix is most effective?",
+      "options": {
+        "A": "Increase the summarization threshold from 70% to 85% so conversations have more room before summarization triggers.",
+        "B": "Store full conversation history in external storage and implement retrieval when the agent detects references like “as I mentioned.”",
+        "C": "Extract transactional facts (amounts, dates, order numbers) into a persistent “case facts” block included in every prompt outside the summarized history.",
+        "D": "Revise the summarization prompt to explicitly preserve all numbers, percentages, dates, and customer-stated expectations verbatim."
+      },
+      "correct": "C",
+      "explanation": "Summarization inherently loses precise details. Extracting transactional facts into a structured “case facts” block outside the summarized history preserves critical information so it’s reliably available in every prompt regardless of how many turns have been summarized.",
+      "domain": 5,
+      "domainName": "Context Management & Reliability",
+      "task": "5.1"
+    },
+    {
+      "id": 124,
+      "questionText": "You are implementing the agent loop for your support agent. After each Claude API call, you must decide whether to continue the loop (run requested tools and call Claude again) or stop (present the final answer to the customer). What determines this decision?",
+      "options": {
+        "A": "Check the `stop_reason` field in Claude’s response—continue if it is `tool_use` and stop if it is `end_turn`.",
+        "B": "Parse Claude’s text for phrases like “I’m done” or “Can I help with anything else?”—natural language signals indicate task completion.",
+        "C": "Set a maximum iteration count (e.g., 10 calls) and stop when reached, regardless of whether Claude indicates more work is needed.",
+        "D": "Check whether the response contains assistant text content—if Claude generated explanatory text, the loop should terminate."
+      },
+      "correct": "A",
+      "explanation": "`stop_reason` is Claude’s explicit structured signal for loop control: `tool_use` indicates Claude wants to run a tool and receive results back, while `end_turn` indicates Claude has completed its response and the loop should end.",
+      "domain": 1,
+      "domainName": "Agentic Architecture & Orchestration",
+      "task": "1.1"
+    },
+    {
+      "id": 125,
+      "questionText": "Production logs show the agent misinterprets outputs from your MCP tools: Unix timestamps from `get_customer`, ISO 8601 dates from `lookup_order`, and numeric status codes (1=pending, 2=shipped). Some tools are third-party MCP servers you cannot modify. Which approach to data format normalization is most maintainable?",
+      "options": {
+        "A": "Use a PostToolUse hook to intercept tool outputs and apply formatting transformations before the agent processes them.",
+        "B": "Modify tools you control to return human-readable formats and create wrappers for third-party tools.",
+        "C": "Create a `normalize_data` tool that the agent calls after every data retrieval to transform values.",
+        "D": "Add detailed format documentation to the system prompt explaining each tool’s data conventions."
+      },
+      "correct": "A",
+      "explanation": "A PostToolUse hook provides a centralized, deterministic point to intercept and normalize all tool outputs—including third-party MCP server data—before the agent processes them. It’s more maintainable because transformations live in code and apply uniformly, rather than relying on LLM interpretation.",
+      "domain": 1,
+      "domainName": "Agentic Architecture & Orchestration",
+      "task": "1.5"
+    },
+    {
+      "id": 126,
+      "questionText": "Your `remove_team_member` tool uses a `dry_run: boolean` parameter for previewing impacts before execution. Production monitoring shows the agent bypasses the preview step by calling with `dry_run=false` directly. You need to ensure every removal is preceded by a preview that the user explicitly confirms. What is the most reliable approach?",
+      "options": {
+        "A": "Add server-side validation that permits `dry_run=false` only when a `dry_run=true` call with identical parameters occurred within the past 60 seconds.",
+        "B": "Annotate the tool as requiring confirmation and configure the orchestration layer to prompt the user for approval before forwarding any calls to annotated tools.",
+        "C": "Add detailed instructions and few-shot examples to the tool description requiring the agent to always call with `dry_run=true` first and wait for user confirmation before calling again.",
+        "D": "Replace with two tools: `preview_remove_member` returns impact details and a single-use confirmation token; `execute_remove_member` requires that token, binding execution to the preview."
+      },
+      "correct": "D",
+      "explanation": "The two-tool token-binding approach makes it architecturally impossible to execute without a prior preview—the execute tool literally requires a token that only the preview tool can generate. This is the only approach that enforces the constraint at the code level rather than relying on LLM compliance with instructions (C), timing heuristics (A), or orchestration infrastructure (B).",
+      "domain": 1,
+      "domainName": "Agentic Architecture & Orchestration",
+      "task": "1.4"
+    },
+    {
+      "id": 127,
+      "questionText": "Production monitoring shows your `search_catalog` tool fails 12% of the time: 8% are network timeouts that succeed when retried, and 4% are query syntax errors that never succeed regardless of retries. Currently both error types are returned identically, causing wasted retries. How should you modify the tool's error handling?",
+      "options": {
+        "A": "Add few-shot examples to your system prompt demonstrating how to distinguish network errors from syntax errors.",
+        "B": "Apply exponential backoff retry logic to all errors uniformly.",
+        "C": "Implement automatic retry with backoff for network timeouts inside the tool; return syntax errors immediately with parameter validation details.",
+        "D": "Return all errors with a `retryable` boolean flag and error type details."
+      },
+      "correct": "C",
+      "explanation": "Handling retries at the tool level for transient errors is the correct abstraction boundary—the tool has definitive knowledge of the error type and can implement deterministic retry logic without relying on the agent to interpret a flag (D) or follow prompt-level instructions (A). Uniform backoff (B) wastes time on syntax errors that will never succeed.",
+      "domain": 2,
+      "domainName": "Tool Design & MCP Integration",
+      "task": "2.2"
+    },
+    {
+      "id": 128,
+      "questionText": "Over several turns discussing investment strategy, a user stated \"I have a very low risk tolerance\" and later \"I want to maximize my returns.\" They now ask: \"What should I invest in?\" Which approach best ensures the recommendation aligns with the user's actual priority?",
+      "options": {
+        "A": "Surface the contradiction and ask the user to clarify which matters more.",
+        "B": "Provide separate recommendations for both scenarios.",
+        "C": "Proceed with the most recently stated preference.",
+        "D": "Recommend a balanced portfolio without addressing the conflict."
+      },
+      "correct": "A",
+      "explanation": "When user preferences directly contradict each other, surfacing the conflict and asking for clarification is the only way to guarantee the recommendation aligns with the user's true intent. Any other approach involves making an assumption that may be wrong—maximizing returns and low risk tolerance are fundamentally incompatible goals that require a human decision.",
+      "domain": 5,
+      "domainName": "Context Management & Reliability",
+      "task": "5.2"
+    },
+    {
+      "id": 129,
+      "questionText": "Users refine playlist preferences over multiple conversation turns. Two messages after a user said \"I love jazz,\" Claude asks \"What genres do you enjoy?\" What is the most likely cause?",
+      "options": {
+        "A": "Claude requires a vector database connection to maintain conversation memory.",
+        "B": "The model's context window has been exceeded.",
+        "C": "The Claude API requires a `session_id` parameter.",
+        "D": "Your application isn't including prior messages in the `messages` array."
+      },
+      "correct": "D",
+      "explanation": "Claude has no server-side memory—every API call is stateless. Without including the full conversation history in the `messages` array of each request, Claude has no knowledge of prior turns. Vector databases (A) and `session_id` (C) are not part of Claude's architecture; context window overflow (B) is impossible for two-message exchanges.",
+      "domain": 5,
+      "domainName": "Context Management & Reliability",
+      "task": "5.1"
+    },
+    {
+      "id": 130,
+      "questionText": "After a 40-minute cooking session, the conversation reaches 78,000 tokens. History includes allergies, recipe scaling, clarified cooking terms, and general discussion. You must reduce tokens while preserving important information. What approach best balances preservation with token reduction?",
+      "options": {
+        "A": "Summarize the entire conversation history.",
+        "B": "Keep only the most recent 20,000 tokens.",
+        "C": "Extract critical structured data (allergies, quantities, preferences), summarize general discussion, and keep recent exchanges verbatim.",
+        "D": "Store the full conversation externally and retrieve relevant parts via semantic search."
+      },
+      "correct": "C",
+      "explanation": "The hybrid approach preserves the highest-value information at the lowest cost. Critical facts like allergies and recipe quantities are extracted into a compact structured block (preventing the precision loss that occurs during summarization), general discussion is summarized, and recent exchanges are kept verbatim for conversational coherence. Options A and B risk losing critical dietary information; D is architectural overkill for a single cooking session.",
+      "domain": 5,
+      "domainName": "Context Management & Reliability",
+      "task": "5.1"
+    },
+    {
+      "id": 131,
+      "questionText": "Users report that during extended conversations the assistant loses track of earlier topics and preferences. Your current implementation keeps only the last 25 message pairs. What is the most effective solution?",
+      "options": {
+        "A": "Hybrid approach: summarize older messages while keeping recent ones verbatim.",
+        "B": "Vector similarity search over the full conversation history.",
+        "C": "Increase the window to 50 message pairs.",
+        "D": "Summarize dropped messages every turn and prepend the running summary."
+      },
+      "correct": "A",
+      "explanation": "The hybrid approach addresses both dimensions of the problem: retaining exact recent context (critical for conversational coherence) while maintaining a compressed representation of earlier preferences (preventing total loss when pairs are dropped). Increasing the window (C) simply delays the same problem. Vector search (B) may miss important context that isn't semantically similar to the current query. Full per-turn summarization (D) adds overhead and accumulates summarization errors.",
+      "domain": 5,
+      "domainName": "Context Management & Reliability",
+      "task": "5.1"
+    },
+    {
+      "id": 132,
+      "questionText": "Users report that latency increases and costs rise when conversations exceed 50 turns. What is the primary cause?",
+      "options": {
+        "A": "The entire conversation history is included with each API request.",
+        "B": "The model generates progressively longer responses.",
+        "C": "Database operations slow down as history grows.",
+        "D": "The model builds an internal user profile requiring more processing."
+      },
+      "correct": "A",
+      "explanation": "Claude's API is fully stateless—every request must include the complete conversation history in the `messages` array. As conversations grow, each request carries more tokens, which directly increases both processing latency and cost. The model does not maintain any internal state between calls (D is false), and response length is not inherently tied to conversation length (B).",
+      "domain": 5,
+      "domainName": "Context Management & Reliability",
+      "task": "5.1"
+    },
+    {
+      "id": 133,
+      "questionText": "After three months of weekly sessions, conversation history grows to 85,000 tokens. When a user asks \"What did we conclude about the theme of isolation?\", the assistant gives generic answers instead of referencing previous discussions. What is the most effective approach?",
+      "options": {
+        "A": "Rolling window truncation.",
+        "B": "Progressive summarization capturing key conclusions.",
+        "C": "Semantic embeddings with retrieval of relevant exchanges.",
+        "D": "Add structured XML tags marking discussion conclusions."
+      },
+      "correct": "C",
+      "explanation": "Semantic search over conversation history is the only approach that scales to three months of discussion while being able to surface specific relevant exchanges on demand. Rolling window (A) would discard most of the history. Progressive summarization (B) compresses discussions into abstractions that lose the specific conclusions users are asking about. XML tags (D) require restructuring all past content and don't solve the retrieval problem at this scale.",
+      "domain": 5,
+      "domainName": "Context Management & Reliability",
+      "task": "5.1"
+    },
+    {
+      "id": 134,
+      "questionText": "During QA testing, Claude follows system prompt guidelines for the first 10–15 turns, but later responses deviate. The conversation is still within token limits. What is the best solution?",
+      "options": {
+        "A": "Move behavioral guidelines into the first user message.",
+        "B": "Start a new conversation after 20 turns.",
+        "C": "Insert user-role messages reinforcing guidelines at conversation breakpoints.",
+        "D": "Use post-response validation to regenerate non-compliant responses."
+      },
+      "correct": "C",
+      "explanation": "Periodic injection of behavioral reminders directly combats instruction drift by re-establishing constraints at regular intervals as conversation history accumulates. Moving guidelines to the first user message (A) reduces their authority. Starting a new conversation (B) destroys context. Post-response validation (D) is corrective rather than preventive and adds significant latency.",
+      "domain": 5,
+      "domainName": "Context Management & Reliability",
+      "task": "5.1"
+    },
+    {
+      "id": 135,
+      "questionText": "Your AI tutor has a 2,800-token system prompt defining teaching methodology and adaptation rules. After 12 turns, the assistant starts ignoring proficiency levels. What is the most effective fix?",
+      "options": {
+        "A": "Inject reminders every 4–5 turns.",
+        "B": "Replace verbose rules with few-shot examples demonstrating proficiency-level adaptation.",
+        "C": "Place critical rules at the end of the system prompt.",
+        "D": "Evaluate responses and regenerate if difficulty level mismatches."
+      },
+      "correct": "B",
+      "explanation": "A 2,800-token system prompt with declarative rules is vulnerable to drift because abstract rules require the model to reason about them on every turn. Replacing verbose rules with concrete few-shot examples that demonstrate correct proficiency-level adaptation gives the model clear behavioral patterns to match—this is more reliably followed across many turns than abstract instructions. Reminder injection (A) helps but addresses symptoms; end-placement (C) helps initially but not with turn-level drift; regeneration (D) is expensive and corrective.",
+      "domain": 4,
+      "domainName": "Prompt Engineering & Structured Output",
+      "task": "4.2"
+    },
+    {
+      "id": 136,
+      "questionText": "Your assistant must maintain an enthusiastic tone, explain its reasoning, and ask clarifying questions. Where should these behavioral guidelines be defined?",
+      "options": {
+        "A": "Prepended to each user message.",
+        "B": "In the system prompt.",
+        "C": "In the first assistant message.",
+        "D": "In environment variables."
+      },
+      "correct": "B",
+      "explanation": "The system prompt is specifically designed for persistent behavioral constraints and guidelines that apply throughout the entire conversation. Prepending to each user message (A) is redundant overhead. The first assistant message (C) is unreliable because the model can deviate from its own prior statements. Environment variables (D) have no effect on model behavior.",
+      "domain": 5,
+      "domainName": "Context Management & Reliability",
+      "task": "5.1"
+    },
+    {
+      "id": 137,
+      "questionText": "Users report repetitive response openings like \"Certainly!\" and \"I'd be happy to help!\" What is the most effective approach?",
+      "options": {
+        "A": "Append a partial assistant message with a direct response opening.",
+        "B": "Lower the temperature setting.",
+        "C": "Post-process responses to remove greetings.",
+        "D": "Add system prompt instructions to avoid those phrases."
+      },
+      "correct": "A",
+      "explanation": "Prefilling the assistant's response with the beginning of a direct answer prevents greeting patterns at the generation level—the model continues from the prefill rather than generating new opening phrases. System prompt instructions (D) can help but are less reliable since the model may still produce variants. Post-processing (C) is a fragile workaround. Temperature (B) controls randomness, not specific phrase patterns.",
+      "domain": 4,
+      "domainName": "Prompt Engineering & Structured Output",
+      "task": "4.2"
+    },
+    {
+      "id": 138,
+      "questionText": "A webhook notifies your system that a user's package has shipped while the user is actively chatting. You want the assistant to incorporate this naturally into the next response. What is the best approach?",
+      "options": {
+        "A": "Add shipping status to the system prompt.",
+        "B": "Send an immediate synthetic user message.",
+        "C": "Force the assistant to call a status tool on each turn.",
+        "D": "Append the status update as a prefix to the next user message."
+      },
+      "correct": "D",
+      "explanation": "Prefixing the status update to the next user message injects real-time context at a natural conversation boundary without disrupting the flow. Modifying the system prompt (A) requires rebuilding the session or is architecturally cumbersome. A synthetic user message (B) can break the natural dialogue flow and confuse attribution. Forcing a tool call each turn (C) is wasteful when events are rare.",
+      "domain": 5,
+      "domainName": "Context Management & Reliability",
+      "task": "5.1"
+    },
+    {
+      "id": 139,
+      "questionText": "Users frequently send requests like \"Book a venue for the party.\" The assistant asks 4+ clarifying questions, causing 35% abandonment. What approach best improves the trade-off?",
+      "options": {
+        "A": "Proceed with hidden defaults.",
+        "B": "Ask all clarifying questions in one compound message.",
+        "C": "State assumptions explicitly and proceed while inviting corrections.",
+        "D": "Use a structured intake form."
+      },
+      "correct": "C",
+      "explanation": "Stating assumptions explicitly and proceeding gives the user an immediate, useful response while preserving their ability to correct wrong assumptions. Hidden defaults (A) leave the user unaware of what was assumed. A compound question list (B) still demands upfront effort from the user. A structured form (D) adds more friction, not less—contradicting the goal of reducing abandonment.",
+      "domain": 5,
+      "domainName": "Context Management & Reliability",
+      "task": "5.2"
+    },
+    {
+      "id": 140,
+      "questionText": "Your assistant uses a contractor-persona system prompt. Early turns follow the rules, but by turn 7 the assistant gives generic advice. Conversation length is only 2,500 tokens. What is the most likely cause?",
+      "options": {
+        "A": "System prompts only establish initial behavior.",
+        "B": "Model attention weakens as turns accumulate.",
+        "C": "Accumulated assistant responses dilute system prompt influence.",
+        "D": "The system prompt is only sent once."
+      },
+      "correct": "C",
+      "explanation": "As assistant responses accumulate in the conversation history, the proportion of text reflecting the system prompt's behavioral constraints decreases relative to the growing body of assistant-generated content. The model increasingly pattern-matches to its own prior outputs rather than the system prompt, compounding drift even at short token lengths. The system prompt is included in every API call (D is false as a standalone explanation), and model attention degradation (B) doesn't operate at 2,500 tokens.",
+      "domain": 5,
+      "domainName": "Context Management & Reliability",
+      "task": "5.1"
+    },
+    {
+      "id": 141,
+      "questionText": "Users ask vague requests like \"Can you help with the report?\" The assistant responds by asking multiple questions (which report? what help? deadline?), causing 40% abandonment. What is the best solution?",
+      "options": {
+        "A": "Make reasonable assumptions, state them explicitly, and offer to adjust.",
+        "B": "Classify ambiguity with a smaller model before responding.",
+        "C": "Use predefined interpretations without stating assumptions.",
+        "D": "Limit the assistant to one clarifying question per turn."
+      },
+      "correct": "A",
+      "explanation": "Proceeding with reasonable stated assumptions eliminates the back-and-forth entirely while keeping the user informed and in control. Predefined silent interpretations (C) leave users confused when the response doesn't match their intent. A single-question limit (D) still requires turns of back-and-forth. A smaller classification model (B) adds latency and infrastructure complexity without solving the core UX problem.",
+      "domain": 5,
+      "domainName": "Context Management & Reliability",
+      "task": "5.2"
     }
   ]
 }

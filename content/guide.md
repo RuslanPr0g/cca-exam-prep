@@ -2119,9 +2119,17 @@ When Edit fails due to a non-unique text match:
 
 # Practice Test
 
-> 60 questions across 4 scenarios. Format and difficulty match the real exam.
-> 
-> Alternatively, you can practice these questions in an exam-like HTML file: [Practical Test (EN)](practical_test_en.html)
+> 76 questions across 5 scenarios. Format and difficulty match the real exam.
+
+## Take it interactively
+
+Every question below is also a live quiz right here on this site — instant feedback, an explanation after every answer, bookmarking for anything tricky, and progress saved automatically in your browser.
+
+- **📘 [Regular](https://ruslanpr0g.github.io/cca-exam-prep/regular)** — this practice-test question bank, ready to answer for real.
+- **✨ [AI](https://ruslanpr0g.github.io/cca-exam-prep/ai)** — a supplementary AI-generated bank covering the same domains from different angles, for extra reps.
+- **🎲 [Random](https://ruslanpr0g.github.io/cca-exam-prep/random)** — a shuffled mix of both banks if you just want to drill.
+
+Go check it out! The scenarios below are the same questions, laid out for reading.
 
 ## Scenario: Multi-agent Research System
 
