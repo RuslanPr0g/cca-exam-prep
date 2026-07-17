@@ -1,0 +1,73 @@
+<h1>Examples of Exam Questions with Explanations</h1>
+<h2>Question 1 (Scenario: Customer Support Agent)</h2>
+<p><strong>Situation:</strong> Data shows that in 12% of cases the agent skips <code>get_customer</code> and calls <code>lookup_order</code> using only the customer’s name, which leads to incorrect refunds.</p>
+<p><strong>Which change is most effective?</strong></p>
+<ul><li>A) Add a programmatic precondition that blocks <code>lookup_order</code> and <code>process_refund</code> until an ID is obtained from <code>get_customer</code> <strong>[CORRECT]</strong></li><li>B) Improve the system prompt</li><li>C) Add few-shot examples</li><li>D) Implement a routing classifier</li></ul>
+<p><strong>Why A:</strong> When critical business logic requires a specific tool sequence, software provides <strong>deterministic guarantees</strong> that prompt-based approaches (B, C) cannot. D addresses availability, not tool ordering.</p>
+<hr>
+<h2>Question 2 (Scenario: Customer Support Agent)</h2>
+<p><strong>Situation:</strong> The agent often calls <code>get_customer</code> instead of <code>lookup_order</code> for order-related questions. Tool descriptions are minimal and similar.</p>
+<p><strong>What is the first step?</strong></p>
+<ul><li>A) Few-shot examples</li><li>B) Expand each tool’s description with input formats, examples, and boundaries <strong>[CORRECT]</strong></li><li>C) Add a routing layer</li><li>D) Merge the tools</li></ul>
+<p><strong>Why B:</strong> Tool descriptions are the model’s primary selection mechanism. This is the lowest-effort, highest-impact fix. A adds tokens without addressing the root cause. C is overengineering. D requires more effort than justified.</p>
+<hr>
+<h2>Question 3 (Scenario: Customer Support Agent)</h2>
+<p><strong>Situation:</strong> The agent resolves only 55% of issues with a target of 80%. It escalates simple cases and tries to handle complex policy exceptions autonomously.</p>
+<p><strong>How do you improve calibration?</strong></p>
+<ul><li>A) Add explicit escalation criteria with few-shot examples <strong>[CORRECT]</strong></li><li>B) Self-rated confidence (1–10) with automatic escalation</li><li>C) A separate classifier trained on historical data</li><li>D) Sentiment analysis</li></ul>
+<p><strong>Why A:</strong> It directly addresses the root cause—unclear decision boundaries. B is unreliable (the model can be confidently wrong). C is overengineering. D solves a different problem (mood != complexity).</p>
+<hr>
+<h2>Question 4 (Scenario: Code Generation with Claude Code)</h2>
+<p><strong>Situation:</strong> You need a custom <code>/review</code> command for standard code review that is available to the whole team when they clone the repository.</p>
+<p><strong>Where should you create the command file?</strong></p>
+<ul><li>A) <code>.claude/commands/</code> in the project repository <strong>[CORRECT]</strong></li><li>B) <code>~/.claude/commands/</code></li><li>C) Root <code>CLAUDE.md</code></li><li>D) <code>.claude/config.json</code></li></ul>
+<p><strong>Why A:</strong> Project commands stored in <code>.claude/commands/</code> are version-controlled and automatically available to everyone. B is for personal commands. C is for instructions, not command definitions. D does not exist.</p>
+<hr>
+<h2>Question 5 (Scenario: Code Generation with Claude Code)</h2>
+<p><strong>Situation:</strong> You need to restructure a monolith into microservices (dozens of files, service-boundary decisions).</p>
+<p><strong>What approach should you use?</strong></p>
+<ul><li>A) Planning mode: explore the codebase, understand dependencies, design an approach <strong>[CORRECT]</strong></li><li>B) Direct execution incrementally</li><li>C) Direct execution with detailed up-front instructions</li><li>D) Direct execution and switch to planning when it gets hard</li></ul>
+<p><strong>Why A:</strong> Planning mode is designed for large changes, multiple possible approaches, and architectural decisions. B risks expensive rework. C assumes you already know the structure. D is reactive.</p>
+<hr>
+<h2>Question 6 (Scenario: Code Generation with Claude Code)</h2>
+<p><strong>Situation:</strong> A codebase has different conventions across areas (React, API, database). Tests are co-located with code. You want conventions to be applied automatically.</p>
+<p><strong>What approach should you use?</strong></p>
+<ul><li>A) <code>.claude/rules/</code> files with YAML frontmatter and glob patterns <strong>[CORRECT]</strong></li><li>B) Put everything in the root CLAUDE.md</li><li>C) Skills in <code>.claude/skills/</code></li><li>D) CLAUDE.md in every directory</li></ul>
+<p><strong>Why A:</strong> <code>.claude/rules/</code> with glob patterns (e.g., <code>**/*.test.tsx</code>) enables automatic convention application based on file paths—ideal for tests spread across the codebase. B relies on model inference. C is manual/on-demand. D does not work well when relevant files are in many directories.</p>
+<hr>
+<h2>Question 7 (Scenario: Multi-agent Research System)</h2>
+<p><strong>Situation:</strong> The system researches “AI impact on creative industries,” but reports cover only visual art. The coordinator decomposed the topic into: “AI in digital art,” “AI in graphic design,” “AI in photography.”</p>
+<p><strong>What’s the cause?</strong></p>
+<ul><li>A) The synthesis agent does not detect gaps</li><li>B) The coordinator decomposed the task too narrowly <strong>[CORRECT]</strong></li><li>C) The web search agent does not search thoroughly enough</li><li>D) The document analysis agent filters out non-visual sources</li></ul>
+<p><strong>Why B:</strong> The logs show the coordinator decomposed “creative industries” only into visual subtopics, completely missing music, literature, and film. Subagents executed correctly—the issue is what they were assigned.</p>
+<hr>
+<h2>Question 8 (Scenario: Multi-agent Research System)</h2>
+<p><strong>Situation:</strong> A web-search subagent times out while researching a complex topic. You need to design how error information is passed back to the coordinator.</p>
+<p><strong>Which error propagation approach best enables intelligent recovery?</strong></p>
+<ul><li>A) Return structured error context to the coordinator: failure type, query, partial results, and alternatives <strong>[CORRECT]</strong></li><li>B) Implement automatic retries with exponential backoff inside the subagent, then return a generic “search unavailable” status</li><li>C) Catch the timeout inside the subagent and return an empty result set marked as success</li><li>D) Propagate the timeout exception to a top-level handler that terminates the whole workflow</li></ul>
+<p><strong>Why A:</strong> Structured error context gives the coordinator what it needs to decide whether to retry with a modified query, try an alternative approach, or continue with partial results. B hides context behind a generic status. C masks failure as success. D aborts the entire workflow unnecessarily.</p>
+<hr>
+<h2>Question 9 (Scenario: Multi-agent Research System)</h2>
+<p><strong>Situation:</strong> The synthesis agent often needs to verify specific claims while merging results. Currently, when verification is needed, the synthesis agent hands control back to the coordinator, which calls the web-search agent and then re-runs synthesis with the new results. This adds 2–3 extra round trips per task and increases latency by 40%. Your assessment shows that 85% of these checks are simple fact checks (dates, names, statistics), while 15% require deeper investigation.</p>
+<p><strong>How do you reduce overhead while maintaining reliability?</strong></p>
+<ul><li>A) Give the synthesis agent a limited <code>verify_fact</code> tool for simple checks, and continue routing complex verification through the coordinator <strong>[CORRECT]</strong></li><li>B) Accumulate all verification needs into a batch and return them to the coordinator at the end</li><li>C) Give the synthesis agent full access to all web-search tools</li><li>D) Proactively cache additional context around each source</li></ul>
+<p><strong>Why A:</strong> This applies the principle of least privilege: the synthesis agent gets exactly what it needs for the 85% common case (simple fact checks) while preserving the coordinator-mediated path for complex investigations. B introduces blocking dependencies (later synthesis steps may depend on earlier verified facts). C breaks separation of responsibilities. D relies on speculative caching that cannot reliably predict needs.</p>
+<hr>
+<h2>Question 10 (Scenario: Claude Code for CI)</h2>
+<p><strong>Situation:</strong> A pipeline runs <code>claude "Analyze this pull request for security issues"</code>, but hangs waiting for interactive input.</p>
+<p><strong>What is the correct approach?</strong></p>
+<ul><li>A) Use the <code>-p</code> flag: <code>claude -p "Analyze this pull request for security issues"</code> <strong>[CORRECT]</strong></li><li>B) Set <code>CLAUDE_HEADLESS=true</code></li><li>C) Redirect stdin from <code>/dev/null</code></li><li>D) Use <code>--batch</code></li></ul>
+<p><strong>Why A:</strong> <code>-p</code> (or <code>--print</code>) is the documented way to run Claude Code in non-interactive mode. It processes the prompt, prints to stdout, and exits. The other options are either non-existent features or Unix workarounds.</p>
+<hr>
+<h2>Question 11 (Scenario: Claude Code for CI)</h2>
+<p><strong>Situation:</strong> The team wants to reduce API cost for automated analysis. Claude currently serves two workflows in real time: (1) a blocking pre-merge check that must complete before developers can merge a PR, and (2) a tech-debt report generated overnight for morning review. A manager proposes moving both to the Message Batches API to save 50%.</p>
+<p><strong>How should you evaluate this proposal?</strong></p>
+<ul><li>A) Use batch processing only for tech-debt reports; keep real-time calls for pre-merge checks <strong>[CORRECT]</strong></li><li>B) Move both workflows to batch processing and poll for completion</li><li>C) Keep real-time calls for both to avoid ordering issues in batch results</li><li>D) Move both to batch processing with a fallback to real time if a batch takes too long</li></ul>
+<p><strong>Why A:</strong> The Message Batches API saves 50%, but processing time can be up to 24 hours with no guaranteed latency SLA. That makes it unsuitable for blocking pre-merge checks where developers are waiting, but ideal for overnight batch workloads like tech-debt reports.</p>
+<hr>
+<h2>Question 12 (Scenario: Multi-file Code Review)</h2>
+<p><strong>Situation:</strong> A pull request changes 14 files in an inventory tracking module. A single-pass review of all files produces inconsistent results: detailed comments for some files but superficial ones for others, missed obvious bugs, and contradictory feedback (a pattern is flagged as problematic in one file but approved in identical code in another file).</p>
+<p><strong>How should you restructure the review?</strong></p>
+<ul><li>A) Split into focused passes: analyze each file individually for local issues, then run a separate integration pass for cross-file data flows <strong>[CORRECT]</strong></li><li>B) Require developers to split large PRs into submissions of 3–4 files</li><li>C) Switch to a higher-tier model with a larger context window to review all 14 files in one pass</li><li>D) Run three independent full-PR review passes and report only issues found in at least two runs</li></ul>
+<p><strong>Why A:</strong> Focused passes directly address the root cause—attention dilution when processing many files at once. Per-file analysis ensures consistent depth, and a separate integration pass catches cross-file issues. B shifts burden to developers without improving the system. C is a misconception: larger context does not fix attention quality. D suppresses real bugs by requiring consensus across inconsistent detections.</p>
+<hr>

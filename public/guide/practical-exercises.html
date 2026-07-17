@@ -1,0 +1,25 @@
+<h1>Practical Exercises</h1>
+<h2>Exercise 1: Multi-tool Agent with Escalation Logic</h2>
+<p><strong>Goal:</strong> Design an agent loop with tool integration, structured error handling, and escalation.</p>
+<p><strong>Steps:</strong></p>
+<ol><li>Define 3–4 MCP tools with detailed descriptions (include two similar tools to test tool selection)</li><li>Implement an agent loop checking <code>stop_reason</code> (<code>"tool_use"</code> / <code>"end_turn"</code>)</li><li>Add structured error responses: <code>errorCategory</code>, <code>isRetryable</code>, description</li><li>Implement an interceptor hook that blocks operations above a threshold and routes to escalation</li><li>Test with multi-aspect requests</li></ol>
+<p><strong>Domains:</strong> 1 (Agent architecture), 2 (Tools and MCP), 5 (Context and reliability)</p>
+<hr>
+<h2>Exercise 2: Configuring Claude Code for Team Development</h2>
+<p><strong>Goal:</strong> Configure CLAUDE.md, custom commands, path-specific rules, and MCP servers.</p>
+<p><strong>Steps:</strong></p>
+<ol><li>Create a project-level CLAUDE.md with universal standards</li><li>Create <code>.claude/rules/</code> files with YAML frontmatter for different code areas (<code>paths: ["src/api/**/*"]</code>, <code>paths: ["**/*.test.*"]</code>)</li><li>Create a project skill under <code>.claude/skills/</code> with <code>context: fork</code> and <code>allowed-tools</code></li><li>Configure an MCP server in <code>.mcp.json</code> with environment variables + a personal override in <code>~/.claude.json</code></li><li>Test planning mode vs direct execution on tasks of different complexity</li></ol>
+<p><strong>Domains:</strong> 3 (Claude Code configuration), 2 (Tools and MCP)</p>
+<hr>
+<h2>Exercise 3: Structured Data Extraction Pipeline</h2>
+<p><strong>Goal:</strong> JSON schemas, <code>tool_use</code> for structured output, validation/retry loops, batch processing.</p>
+<p><strong>Steps:</strong></p>
+<ol><li>Define an extraction tool with a JSON schema (required/optional fields, enums with "other", nullable fields)</li><li>Build a validation loop: on error, retry with the document, the incorrect extraction, and the specific validation error</li><li>Add few-shot examples for documents with different structures</li><li>Use batch processing via the Message Batches API: 100 documents, handle failures via <code>custom_id</code></li><li>Route to humans: field-level confidence scores, document-type analysis</li></ol>
+<p><strong>Domains:</strong> 4 (Prompt engineering), 5 (Context and reliability)</p>
+<hr>
+<h2>Exercise 4: Designing and Debugging a Multi-agent Research Pipeline</h2>
+<p><strong>Goal:</strong> Subagent orchestration, context passing, error propagation, synthesis with source tracking.</p>
+<p><strong>Steps:</strong></p>
+<ol><li>A coordinator with 2+ subagents (<code>allowedTools</code> includes <code>"Task"</code>, context is passed explicitly in prompts)</li><li>Run subagents in parallel via multiple <code>Task</code> calls in a single response</li><li>Require structured subagent output: claim, quote, source URL, publication date</li><li>Simulate a subagent timeout: return structured error context to the coordinator and continue with partial results</li><li>Test with conflicting data: preserve both values with attribution; separate confirmed vs disputed findings</li></ol>
+<p><strong>Domains:</strong> 1 (Agent architecture), 2 (Tools and MCP), 5 (Context and reliability)</p>
+<hr>

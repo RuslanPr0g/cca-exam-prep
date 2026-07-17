@@ -1,0 +1,76 @@
+<h1>Chapter 11: Context Management in Production Systems</h1>
+<h2>11.1 Extract Facts into a Separate Block</h2>
+<p>Instead of relying on conversation history (which degrades during summarization), extract key facts into a structured block:</p>
+<pre><code>=== CASE FACTS (updated whenever a new fact appears) ===
+Customer ID: CUST-12345
+Order ID: ORD-67890
+Order Date: 2025-01-15
+Order Amount: $89.99
+Issue: Damaged item on delivery
+Customer Request: Full refund
+Status: Pending manager approval
+===</code></pre>
+<p>Include this block in every prompt, regardless of how history is summarized.</p>
+<h2>11.2 Trimming Tool Results</h2>
+<p>If <code>lookup_order</code> returns 40+ fields but you only need 5 for the current task:</p>
+<pre><code class="lang-python"># PostToolUse hook: keep only relevant fields
+@hook("PostToolUse", tool="lookup_order")
+def trim_order_fields(result):
+    return {
+        "order_id": result["order_id"],
+        "status": result["status"],
+        "total": result["total"],
+        "items": result["items"],
+        "return_eligible": result["return_eligible"]
+    }</code></pre>
+<p>This conserves context and reduces noise.</p>
+<h2>11.3 Position-aware Input</h2>
+<p>Place critical information with the lost-in-the-middle effect in mind:</p>
+<pre><code>[KEY FINDINGS — at the top]
+Found 3 critical vulnerabilities...
+
+[DETAILED RESULTS — middle]
+=== File auth.ts ===
+...
+=== File database.ts ===
+...
+
+[ACTION ITEMS — at the end]
+Priority: fix auth.ts vulnerabilities before merge.</code></pre>
+<h2>11.4 Scratchpad Files</h2>
+<p>In long investigations, the agent can write key findings to a scratchpad file:</p>
+<pre><code># investigation-scratchpad.md
+## Key findings
+- PaymentProcessor in src/payments/processor.ts inherits from BaseProcessor
+- refund() is called from 3 places: OrderController, AdminPanel, CronJob
+- External PaymentGateway API has a rate limit of 100 req/min
+- Migration #47 added refund_reason (NOT NULL) — 2024-12-01</code></pre>
+<p>When context degrades (or in a new session), the agent can consult the scratchpad instead of re-running discovery.</p>
+<h2>11.5 Delegating to Subagents to Protect Context</h2>
+<pre><code>Main agent: "Investigate dependencies of the payments module"
+  -&gt; Subagent (Explore): reads 15 files, traces imports
+  -&gt; Returns: "Payments depends on AuthService, OrderModel, and the external PaymentGateway API"
+
+Main agent: keeps one line in context instead of 15 files</code></pre>
+<p><strong>Separate context layer:</strong> In multi-agent systems, each subagent operates within a limited context budget—it receives only the information required for its task. The coordinator acts as a separate context layer: it aggregates subagent outputs, stores global state, and allocates context. This prevents “context leakage,” where one agent consumes the window with information irrelevant to others.</p>
+<p><strong>Constrained context budgets for subagents:</strong></p>
+<ul><li>Send minimal context: a specific task + necessary data</li><li>Instruct the subagent to return structured results, not raw data dumps</li><li>Use <code>allowedTools</code> to limit the subagent’s toolset—fewer tools means fewer distractions and lower context cost</li></ul>
+<h2>11.6 Structured State Persistence (for crash recovery)</h2>
+<p>Each agent exports its state to a known location:</p>
+<pre><code class="lang-json">// agent-state/web-search-agent.json
+{
+  "status": "completed",
+  "queries_executed": ["AI music 2024", "AI music composition"],
+  "results_count": 12,
+  "key_findings": [...],
+  "coverage": ["music composition", "music production"],
+  "gaps": ["music distribution", "music licensing"]
+}</code></pre>
+<p>The coordinator loads a manifest on resume:</p>
+<pre><code class="lang-json">// agent-state/manifest.json
+{
+  "web-search": "completed",
+  "doc-analysis": "in_progress",
+  "synthesis": "not_started"
+}</code></pre>
+<hr>

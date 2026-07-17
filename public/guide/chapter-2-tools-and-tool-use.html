@@ -1,0 +1,61 @@
+<h1>Chapter 2: Tools and <code>tool_use</code></h1>
+<blockquote><p>Documentation: <a href="https://platform.claude.com/docs/en/build-with-claude/tool-use" target="_blank" rel="noopener noreferrer">Tool Use</a></p></blockquote>
+<h2>2.1 What is <code>tool_use</code></h2>
+<p><code>tool_use</code> is a mechanism that allows Claude to call external functions. The model does not run code directly—it generates a structured tool call request; your code executes it and returns the result.</p>
+<h2>2.2 Tool Definition</h2>
+<p>Each tool is defined using a JSON schema:</p>
+<pre><code class="lang-json">{
+  "name": "get_customer",
+  "description": "Finds a customer by email or ID. Returns the customer profile, including name, email, order history, and account status. Use this tool BEFORE lookup_order to verify the customer's identity. Accepts an email (format: user@domain.com) or a numeric customer_id.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "email": {"type": "string", "description": "Customer email"},
+      "customer_id": {"type": "integer", "description": "Numeric customer ID"}
+    },
+    "required": []
+  }
+}</code></pre>
+<p><strong>Critically important aspects of a tool description:</strong></p>
+<ol><li><strong>The description is the primary selection mechanism.</strong> An LLM chooses tools based on their descriptions. Minimal descriptions (“Retrieves customer information”) lead to mistakes when tools overlap.</li><li><strong>Include in the description:</strong><ul><li>What the tool does and returns</li><li>Input formats and example values</li><li>Edge cases and constraints</li><li>When to use this tool vs similar alternatives</li></ul></li><li><strong>Avoid</strong> identical or overlapping descriptions across tools. If <code>analyze_content</code> and <code>analyze_document</code> have nearly identical descriptions, the model will confuse them.</li><li><strong>Built-in tools vs MCP tools:</strong> agents may prefer built-in tools (Read, Grep) over MCP tools with similar functionality. To prevent this, strengthen MCP tool descriptions—highlight concrete advantages, unique data, or context that built-in tools cannot provide.</li></ol>
+<h2>2.3 The <code>tool_choice</code> Parameter</h2>
+<p><code>tool_choice</code> controls how the model selects tools:</p>
+<div class="md-table-wrap"><table><thead><tr><th>Value</th><th>Behavior</th><th>When to use</th></tr></thead><tbody><tr><td><code>{"type": "auto"}</code></td><td>The model decides whether to call a tool or answer in text</td><td>Default for most cases</td></tr><tr><td><code>{"type": "any"}</code></td><td>The model <strong>must</strong> call some tool</td><td>When you need guaranteed structured output</td></tr><tr><td><code>{"type": "tool", "name": "extract_metadata"}</code></td><td>The model <strong>must</strong> call a specific tool</td><td>When you need a forced first step / execution order</td></tr></tbody></table></div>
+<p><strong>Important scenarios:</strong></p>
+<ul><li><code>tool_choice: "any"</code> + multiple extraction tools → the model picks the best one, but you still get structured output</li><li>Forced selection → when you must guarantee a specific first action (e.g., <code>extract_metadata</code> before enrichment)</li></ul>
+<h2>2.4 JSON Schemas for Structured Output</h2>
+<p>Using <code>tool_use</code> with JSON schemas is the <strong>most reliable</strong> way to obtain structured output from Claude. It:</p>
+<ul><li>Guarantees syntactically valid JSON (no missing braces, no trailing commas)</li><li>Enforces the required structure (required fields are present)</li><li>Does <strong>not</strong> guarantee semantic correctness (values can still be wrong)</li></ul>
+<p><strong>Schema design — key principles:</strong></p>
+<pre><code class="lang-json">{
+  "type": "object",
+  "properties": {
+    "category": {
+      "type": "string",
+      "enum": ["bug", "feature", "docs", "unclear", "other"]
+    },
+    "category_detail": {
+      "type": ["string", "null"],
+      "description": "Details if category = 'other' or 'unclear'"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low"]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "optional_field": {
+      "type": ["string", "null"],
+      "description": "Null if the information was not found in the source"
+    }
+  },
+  "required": ["category", "severity"]
+}</code></pre>
+<p><strong>Schema design rules:</strong></p>
+<ol><li><strong>Required vs optional:</strong> mark fields as required only if the information is always available. Required fields push the model to fabricate values when data is missing.</li><li><strong>Nullable fields:</strong> use <code>"type": ["string", "null"]</code> for information that may be absent. The model can return <code>null</code> instead of hallucinating.</li><li><strong>Enums with <code>"other"</code>:</strong> add <code>"other"</code> + a detail string to avoid losing data outside your predefined categories.</li><li><strong>Enum <code>"unclear"</code>:</strong> for cases where the model cannot confidently pick a category—honest <code>"unclear"</code> is better than a wrong category.</li></ol>
+<h2>2.5 Syntax vs Semantic Errors</h2>
+<div class="md-table-wrap"><table><thead><tr><th>Error type</th><th>Example</th><th>Mitigation</th></tr></thead><tbody><tr><td><strong>Syntax</strong></td><td>Invalid JSON, wrong field type</td><td><code>tool_use</code> with a JSON schema (eliminates)</td></tr><tr><td><strong>Semantic</strong></td><td>Totals don't add up, value in wrong field, hallucination</td><td>Validation checks, retry with feedback, self-correction</td></tr></tbody></table></div>
+<hr>

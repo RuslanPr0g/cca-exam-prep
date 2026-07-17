@@ -1,0 +1,58 @@
+<h1>Chapter 4: Model Context Protocol (MCP)</h1>
+<blockquote><p>Documentation: <a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener noreferrer">MCP</a> | <a href="https://modelcontextprotocol.io/docs/concepts/tools" target="_blank" rel="noopener noreferrer">Tools</a> | <a href="https://modelcontextprotocol.io/docs/concepts/resources" target="_blank" rel="noopener noreferrer">Resources</a> | <a href="https://modelcontextprotocol.io/docs/concepts/servers" target="_blank" rel="noopener noreferrer">Servers</a></p></blockquote>
+<h2>4.1 What is MCP</h2>
+<p>The Model Context Protocol (MCP) is an open protocol for connecting external systems to Claude. MCP defines three primary resource types:</p>
+<ol><li><strong>Tools</strong> — functions the agent can call to perform actions (CRUD operations, API calls, command execution)</li><li><strong>Resources</strong> — data the agent can read for context (documentation, database schemas, content catalogs)</li><li><strong>Prompts</strong> — predefined prompt templates for common tasks</li></ol>
+<h2>4.2 MCP Servers</h2>
+<p>An MCP server is a process that implements the MCP protocol and provides tools/resources. When you connect to an MCP server:</p>
+<ul><li>All tools are discovered automatically</li><li>Tools from all connected servers are available at once</li><li>Tool descriptions determine how the model will use them</li></ul>
+<h2>4.3 Configuring MCP Servers</h2>
+<p><strong>Project configuration (<code>.mcp.json</code>)</strong> — for team usage:</p>
+<pre><code class="lang-json">{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "jira": {
+      "command": "npx",
+      "args": ["-y", "mcp-server-jira"],
+      "env": {
+        "JIRA_TOKEN": "${JIRA_TOKEN}"
+      }
+    }
+  }
+}</code></pre>
+<p><strong>Key points:</strong></p>
+<ul><li><code>.mcp.json</code> is stored at the project root and managed in version control</li><li>Environment variables (<code>${GITHUB_TOKEN}</code>) are used for secrets—tokens themselves are not committed</li><li>Available to all project contributors</li></ul>
+<p><strong>User configuration (<code>~/.claude.json</code>)</strong> — for personal/experimental servers:</p>
+<ul><li>Stored in the user's home directory</li><li>Not shared via version control</li><li>Suitable for personal experiments and testing</li></ul>
+<p><strong>Choosing servers:</strong></p>
+<ul><li>For standard integrations (Jira, GitHub, Slack), prefer existing community MCP servers</li><li>Build your own servers only for unique, team-specific workflows</li></ul>
+<h2>4.4 The <code>isError</code> Flag in MCP</h2>
+<p>When an MCP tool encounters an error, it uses <code>isError: true</code> in the response. This signals to the agent that the call failed.</p>
+<p><strong>Structured error (good):</strong></p>
+<pre><code class="lang-json">{
+  "isError": true,
+  "content": {
+    "errorCategory": "transient",
+    "isRetryable": true,
+    "message": "The service is temporarily unavailable. Timeout while calling the orders API.",
+    "attempted_query": "order_id=12345",
+    "partial_results": null
+  }
+}</code></pre>
+<p><strong>Generic error (anti-pattern):</strong></p>
+<pre><code class="lang-json">{
+  "isError": true,
+  "content": "Operation failed"
+}</code></pre>
+<p>A generic error gives the agent no information for decision-making—should it retry, change the query, or escalate?</p>
+<h2>4.5 MCP Resources</h2>
+<p>Resources are data that an agent can request to get context without taking actions:</p>
+<ul><li>Content catalogs (e.g., a list of all project tasks, hierarchical navigation)</li><li>Database schemas (understanding data structure)</li><li>Documentation (API references, internal guides)</li><li>Issue/task summaries</li></ul>
+<p><strong>Resource advantage:</strong> the agent does not need exploratory tool calls to understand what data exists. A resource provides an immediate “map.”</p>
+<hr>

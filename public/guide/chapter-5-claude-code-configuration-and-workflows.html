@@ -1,0 +1,125 @@
+<h1>Chapter 5: Claude Code — Configuration and Workflows</h1>
+<blockquote><p>Documentation: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener noreferrer">Claude Code</a> | <a href="https://code.claude.com/docs/en/memory" target="_blank" rel="noopener noreferrer">Memory / CLAUDE.md</a> | <a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener noreferrer">Skills</a> | <a href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener noreferrer">MCP</a> | <a href="https://code.claude.com/docs/en/hooks" target="_blank" rel="noopener noreferrer">Hooks</a> | <a href="https://code.claude.com/docs/en/sub-agents" target="_blank" rel="noopener noreferrer">Sub-agents</a> | <a href="https://code.claude.com/docs/en/github-actions" target="_blank" rel="noopener noreferrer">GitHub Actions</a> | <a href="https://code.claude.com/docs/en/headless" target="_blank" rel="noopener noreferrer">Headless</a></p></blockquote>
+<h2>5.1 The CLAUDE.md Hierarchy</h2>
+<p>CLAUDE.md is the instruction file(s) for Claude Code. There is a three-level hierarchy:</p>
+<pre><code>1. User-level: ~/.claude/CLAUDE.md
+   - Applies only to that user
+   - NOT shared via VCS
+   - Personal preferences and working style
+
+2. Project-level: .claude/CLAUDE.md or a root CLAUDE.md
+   - Applies to all project contributors
+   - Managed via VCS
+   - Coding standards, testing standards, architectural decisions
+
+3. Directory-level: CLAUDE.md in subdirectories
+   - Applies when working with files in that directory
+   - Conventions specific to that part of the codebase</code></pre>
+<p><strong>Common mistake:</strong> a new team member does not receive project instructions because they were placed in <code>~/.claude/CLAUDE.md</code> (user-level) instead of <code>.claude/CLAUDE.md</code> (project-level).</p>
+<h2>5.2 <code>@path</code> Syntax (File Imports)</h2>
+<p>CLAUDE.md can reference external files using <code>@path</code>, making configuration modular:</p>
+<pre><code class="lang-markdown"># Project CLAUDE.md
+
+Coding standards are described in @./standards/coding-style.md
+Test requirements are in @./standards/testing-requirements.md
+Project overview is in @README.md and dependencies are in @package.json</code></pre>
+<p><strong>Rules for <code>@path</code>:</strong></p>
+<ul><li>Use <code>@</code> immediately before the file path (no space)</li><li>Relative and absolute paths are supported</li><li>Relative paths are resolved relative to the file that contains the import</li><li>Maximum import nesting depth is 5</li></ul>
+<p>This avoids duplication and lets each package include only relevant standards.</p>
+<h2>5.3 The <code>.claude/rules/</code> Directory</h2>
+<p><code>.claude/rules/</code> is an alternative to a monolithic CLAUDE.md, used to organize rules by topic:</p>
+<pre><code>.claude/rules/
+  testing.md          -- testing conventions
+  api-conventions.md  -- API conventions
+  deployment.md       -- deployment rules
+  react-patterns.md   -- React patterns</code></pre>
+<p><strong>Key feature: YAML frontmatter with <code>paths</code> for conditional loading:</strong></p>
+<pre><code class="lang-yaml">---
+paths: ["src/api/**/*"]
+---
+
+For API files, use async/await with explicit error handling.
+Each endpoint must return a standard response wrapper.</code></pre>
+<pre><code class="lang-yaml">---
+paths: ["**/*.test.tsx", "**/*.test.ts"]
+---
+
+Tests must use describe/it blocks.
+Use data factories instead of hardcoding.
+Do not mock the database—use a test database.</code></pre>
+<p><strong>How it works:</strong></p>
+<ul><li>A rule is loaded <strong>only</strong> when Claude Code edits a file matching the <code>paths</code> pattern</li><li>This saves context and tokens—irrelevant rules are not loaded</li><li>Glob patterns let you apply conventions by file type regardless of location (ideal for tests scattered across the codebase)</li></ul>
+<p><strong>When to use <code>.claude/rules/</code> with <code>paths</code> vs directory-level CLAUDE.md:</strong></p>
+<ul><li><code>.claude/rules/</code> with <code>paths</code> — when conventions apply to files spread across many directories (tests, migrations)</li><li>Directory-level CLAUDE.md — when conventions are tied to a specific directory and are not needed elsewhere</li></ul>
+<h2>5.4 Custom Slash Commands and Skills</h2>
+<blockquote><p><strong>Note:</strong> in the current Claude Code version, custom commands (<code>.claude/commands/</code>) are unified with skills (<code>.claude/skills/</code>). Both formats create <code>/name</code> commands. The exam guide references <code>.claude/commands/</code>—that format is still supported.</p></blockquote>
+<p>Slash commands are reusable prompt templates invoked via <code>/name</code>:</p>
+<p><strong><code>.claude/commands/</code> format (legacy, supported):</strong></p>
+<pre><code>.claude/commands/
+  review.md        -- /review -- standard code review
+  test-gen.md      -- /test-gen -- test generation</code></pre>
+<p><strong><code>.claude/skills/</code> format (current):</strong></p>
+<pre><code>.claude/skills/
+  review/SKILL.md  -- /review -- with frontmatter configuration
+  test-gen/SKILL.md</code></pre>
+<p><strong>Project commands</strong> (<code>.claude/commands/</code> or <code>.claude/skills/</code>):</p>
+<ul><li>Stored in VCS and available to everyone when cloning the repo</li><li>Ensure consistent workflows across the team</li></ul>
+<p><strong>User commands</strong> (<code>~/.claude/commands/</code> or <code>~/.claude/skills/</code>):</p>
+<ul><li>Personal commands not shared via VCS</li><li>For individual workflows</li></ul>
+<h2>5.5 Skills — <code>.claude/skills/</code></h2>
+<p>Skills are advanced commands configured via SKILL.md frontmatter:</p>
+<pre><code class="lang-yaml">---
+context: fork
+allowed-tools: ["Read", "Grep", "Glob"]
+argument-hint: "Path to the directory to analyze"
+---
+
+Analyze the code structure in the specified directory.
+Output a report on dependencies and architectural patterns.</code></pre>
+<p><strong>Frontmatter parameters:</strong></p>
+<div class="md-table-wrap"><table><thead><tr><th>Parameter</th><th>Description</th></tr></thead><tbody><tr><td><code>context: fork</code></td><td>Runs the skill in an isolated subagent. Verbose output does not pollute the main session</td></tr><tr><td><code>allowed-tools</code></td><td>Restricts which tools are available (security—e.g., the skill cannot delete files if not allowed)</td></tr><tr><td><code>argument-hint</code></td><td>Hint that asks for an argument when invoked without parameters</td></tr></tbody></table></div>
+<p><strong>When to use a skill vs CLAUDE.md:</strong></p>
+<ul><li><strong>Skill</strong> — on-demand invocation for a specific task (review, analysis, generation)</li><li><strong>CLAUDE.md</strong> — always-loaded general standards and conventions</li></ul>
+<p><strong>Personal skills (<code>~/.claude/skills/</code>):</strong></p>
+<ul><li>Create personal variants under different names so you don't affect teammates</li></ul>
+<h2>5.6 Planning Mode vs Direct Execution</h2>
+<p><strong>Planning mode:</strong></p>
+<ul><li>The model only investigates and plans; it does not make changes</li><li>Uses Read, Grep, Glob to explore the codebase</li><li>Produces an implementation plan that the user approves</li><li>Safe exploration with no side effects</li></ul>
+<p><strong>When to use planning mode:</strong></p>
+<ul><li>Large changes (dozens of files)</li><li>Multiple plausible approaches (microservices: how to define boundaries?)</li><li>Architectural decisions (which framework? what structure?)</li><li>Unfamiliar codebase (you must understand before changing)</li><li>Library migrations affecting 45+ files</li></ul>
+<p><strong>When to use direct execution:</strong></p>
+<ul><li>Single-file fixes with a clear stack trace</li><li>Adding one validation check</li><li>Well-understood, unambiguous changes</li></ul>
+<p><strong>Combined approach:</strong></p>
+<ol><li>Planning mode for investigation and design</li><li>User approves the plan</li><li>Direct execution to implement the approved plan</li></ol>
+<p><strong>Explore subagent</strong> — a specialized subagent for exploring the codebase:</p>
+<ul><li>Isolates verbose output from the main context</li><li>Returns only a summary</li><li>Prevents context-window exhaustion in multi-phase tasks</li></ul>
+<h2>5.7 The <code>/compact</code> Command</h2>
+<p><code>/compact</code> is a built-in command for compressing context:</p>
+<ul><li>Summarizes prior history to free up the context window</li><li>Used in long investigation sessions when the context fills up with verbose tool output</li><li>Risk: exact numeric values, dates, and specific details can be lost during summarization</li></ul>
+<h2>5.8 The <code>/memory</code> Command</h2>
+<p><code>/memory</code> is a built-in command for managing memory between sessions:</p>
+<ul><li>Opens the <code>CLAUDE.md</code> file for editing, allowing you to save notes, preferences, and context</li><li>Information persists across sessions and is automatically loaded on startup</li><li>Useful for storing project conventions, user preferences, frequently used commands, and current work context</li><li>Alternative to re-explaining the same instructions in every session</li></ul>
+<h2>5.9 Claude Code CLI for CI/CD</h2>
+<p><strong>The <code>-p</code> (or <code>--print</code>) flag:</strong></p>
+<pre><code class="lang-bash">claude -p "Analyze this pull request for security issues"</code></pre>
+<ul><li>Non-interactive mode: processes the prompt, prints to stdout, exits</li><li>Does not wait for user input</li><li>The only correct way to run Claude in CI/CD pipelines</li></ul>
+<p><strong>Structured output for CI:</strong></p>
+<pre><code class="lang-bash">claude -p "Review this PR" --output-format json --json-schema '{"type":"object",...}'</code></pre>
+<ul><li><code>--output-format json</code> — output in JSON</li><li><code>--json-schema</code> — validate output against a schema</li><li>The result can be parsed to automatically post inline PR comments</li></ul>
+<p><strong>Session context isolation:</strong> The same Claude session that generated code is often less effective at reviewing it (the model retains its reasoning context and is less likely to challenge its own decisions). Use an independent instance for review.</p>
+<p><strong>Preventing duplicate comments:</strong> When re-reviewing after new commits, include prior review results in context and instruct Claude to report only new or unresolved issues.</p>
+<h2>5.10 <code>fork_session</code> and Session Management</h2>
+<p><strong><code>--resume &lt;session-name&gt;</code></strong> resumes a named session:</p>
+<pre><code class="lang-bash">claude --resume investigation-auth-bug</code></pre>
+<ul><li>Continues a prior conversation with saved context</li><li>Useful for long investigations across multiple sessions</li><li>Risk: if files changed since the prior session, tool results may be stale</li></ul>
+<p><strong><code>fork_session</code></strong> creates an independent branch from shared context:</p>
+<pre><code>Codebase investigation
+         |
+    fork_session
+    /           \
+Approach A:      Approach B:
+Redux            Context API</code></pre>
+<ul><li>Both forks inherit context up to the branch point</li><li>Afterwards, they diverge independently</li><li>Useful for comparing approaches or testing strategies</li></ul>
+<p><strong>When to start a new session instead of resuming:</strong></p>
+<ul><li>Tool results are stale (files changed)</li><li>A lot of time has passed and context has degraded</li><li>It is better to restart with "Here is a short summary of what we found: ..." than to resume with old tool data</li></ul>
+<hr>

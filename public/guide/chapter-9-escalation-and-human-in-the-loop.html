@@ -1,0 +1,50 @@
+<h1>Chapter 9: Escalation and Human-in-the-Loop</h1>
+<h2>9.1 When to Escalate to a Human</h2>
+<p><strong>Escalation triggers (clear rules):</strong></p>
+<div class="md-table-wrap"><table><thead><tr><th>Situation</th><th>Action</th></tr></thead><tbody><tr><td>The customer explicitly asks “get me a manager”</td><td>Escalate immediately; do not attempt to solve</td></tr><tr><td>Policy does not cover the request</td><td>Escalate (e.g., competitor price matching when policy is silent)</td></tr><tr><td>The agent cannot make progress</td><td>Escalate after a reasonable number of attempts</td></tr><tr><td>Financial operation above a threshold</td><td>Escalate (preferably enforced via a hook, not a prompt)</td></tr><tr><td>Multiple matches when searching for a customer</td><td>Ask for additional identifiers; do not guess</td></tr></tbody></table></div>
+<p><strong>What is NOT a reliable trigger:</strong></p>
+<div class="md-table-wrap"><table><thead><tr><th>Unreliable method</th><th>Why it fails</th></tr></thead><tbody><tr><td>Sentiment analysis</td><td>Customer mood does not correlate with case complexity</td></tr><tr><td>Model self-rated confidence (1–10)</td><td>The model can be confidently wrong; calibration is poor</td></tr><tr><td>An automatic classifier</td><td>Overengineering; may require training data you don’t have</td></tr></tbody></table></div>
+<h2>9.2 Escalation Patterns</h2>
+<p><strong>Immediate escalation:</strong></p>
+<pre><code>Customer: "I want to speak to a manager"
+Agent: [immediately calls escalate_to_human]
+NOT: "I can help with your issue, let me..."</code></pre>
+<p><strong>Escalation after an attempt to resolve:</strong></p>
+<pre><code>Customer: "My refrigerator broke two days after purchase"
+Agent: [checks the order, offers a warranty replacement]
+If the customer is not satisfied -&gt; escalate</code></pre>
+<p><strong>Nuanced escalation (acknowledge → resolve → escalate on reiteration):</strong></p>
+<pre><code>Customer: "This is outrageous, I'm very unhappy with the quality!"
+Agent: [acknowledges frustration] "I understand your frustration."
+       [offers resolution] "I can offer a replacement or a refund."
+Customer: "No, I want to talk to someone!"
+Agent: [customer insists again -&gt; immediate escalation]</code></pre>
+<p>Key principle: acknowledge emotion first, then propose a concrete solution, and only escalate if the customer reiterates the desire for a human. Do not escalate on the first expression of dissatisfaction (that is not the same as requesting a manager).</p>
+<p><strong>Escalation for a policy gap:</strong></p>
+<pre><code>Customer: "Competitor X has this item 30% cheaper—give me a discount"
+Policy: covers price adjustments only on your own site
+Agent: [escalates — policy does not cover competitor price matching]</code></pre>
+<h2>9.3 Structured Handoff Protocols</h2>
+<p>On escalation, the agent should pass a structured summary to a human:</p>
+<pre><code class="lang-json">{
+  "customer_id": "CUST-12345",
+  "customer_name": "Ivan Petrov",
+  "issue_summary": "Refund request for a damaged item",
+  "order_id": "ORD-67890",
+  "root_cause": "Item arrived damaged; photos attached",
+  "actions_taken": [
+    "Verified customer via get_customer",
+    "Confirmed order via lookup_order",
+    "Offered a standard replacement — customer insists on a refund"
+  ],
+  "refund_amount": "$89.99",
+  "recommended_action": "Approve a full refund",
+  "escalation_reason": "Customer requested to speak with a manager"
+}</code></pre>
+<p>The human operator does not have access to the full conversation transcript—they only see this summary. Therefore it must be complete and self-contained.</p>
+<h2>9.4 Confidence Calibration and Human Oversight</h2>
+<p>For data extraction systems:</p>
+<ol><li><strong>Field-level confidence scores:</strong> the model outputs a confidence score per extracted field</li><li><strong>Calibration:</strong> use labeled validation sets to tune thresholds</li><li><strong>Routing:</strong><ul><li>High confidence + stable accuracy -&gt; automated processing</li><li>Low confidence or ambiguous sources -&gt; human review</li></ul></li></ol>
+<p><strong>Stratified random sampling:</strong></p>
+<ul><li>Even for high-confidence extractions, regularly audit a sample</li><li>An aggregate 97% accuracy can hide 40% errors for a particular document type</li><li>Analyze accuracy by document type and by field, not only overall</li></ul>
+<hr>

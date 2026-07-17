@@ -1,0 +1,14 @@
+<h1>Chapter 13: Claude Code Built-in Tools</h1>
+<h2>13.1 Tool Selection Reference</h2>
+<div class="md-table-wrap"><table><thead><tr><th>Task</th><th>Tool</th><th>Example</th></tr></thead><tbody><tr><td>Find files by name/pattern</td><td><strong>Glob</strong></td><td><code>**/*.test.tsx</code>, <code>src/components/**/*.ts</code></td></tr><tr><td>Search within files</td><td><strong>Grep</strong></td><td>Function name, error message, import</td></tr><tr><td>Read a file in full</td><td><strong>Read</strong></td><td>Load a file for analysis</td></tr><tr><td>Write a new file</td><td><strong>Write</strong></td><td>Create a file from scratch</td></tr><tr><td>Edit an existing file precisely</td><td><strong>Edit</strong></td><td>Replace a specific snippet via unique text match</td></tr><tr><td>Run a shell command</td><td><strong>Bash</strong></td><td>git, npm, run tests, build</td></tr></tbody></table></div>
+<h2>13.2 Incremental Investigation Strategy</h2>
+<p>Do not read all files at once. Build understanding incrementally:</p>
+<pre><code>1. Grep: find entry points (function definition, export)
+2. Read: read the found files
+3. Grep: find usages (import, calls)
+4. Read: read consumer files
+5. Repeat until you have a complete picture</code></pre>
+<h2>13.3 Fallback: Read + Write Instead of Edit</h2>
+<p>When Edit fails due to a non-unique text match:</p>
+<ol><li>Read — load the full file content</li><li>Modify the content programmatically</li><li>Write — write the updated version</li></ol>
+<hr>

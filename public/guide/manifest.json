@@ -1,0 +1,147 @@
+{
+  "generatedFrom": "guide.md",
+  "generatedAt": "2026-07-17",
+  "count": 28,
+  "chapters": [
+    {
+      "id": "claude-certified-architect-foundations-certification",
+      "title": "Claude Certified Architect — Foundations Certification",
+      "type": "top"
+    },
+    {
+      "id": "official-documentation",
+      "title": "Official Documentation",
+      "type": "top"
+    },
+    {
+      "id": "part-i-theory-foundations",
+      "title": "PART I: THEORY FOUNDATIONS",
+      "type": "section"
+    },
+    {
+      "id": "chapter-1-claude-api-fundamentals-of-model-interaction",
+      "title": "Chapter 1: Claude API — Fundamentals of Model Interaction",
+      "type": "child"
+    },
+    {
+      "id": "chapter-2-tools-and-tool-use",
+      "title": "Chapter 2: Tools and tool_use",
+      "type": "child"
+    },
+    {
+      "id": "chapter-3-claude-agent-sdk-building-agentic-systems",
+      "title": "Chapter 3: Claude Agent SDK — Building Agentic Systems",
+      "type": "child"
+    },
+    {
+      "id": "chapter-4-model-context-protocol-mcp",
+      "title": "Chapter 4: Model Context Protocol (MCP)",
+      "type": "child"
+    },
+    {
+      "id": "chapter-5-claude-code-configuration-and-workflows",
+      "title": "Chapter 5: Claude Code — Configuration and Workflows",
+      "type": "child"
+    },
+    {
+      "id": "chapter-6-prompt-engineering-advanced-techniques",
+      "title": "Chapter 6: Prompt Engineering — Advanced Techniques",
+      "type": "child"
+    },
+    {
+      "id": "chapter-7-message-batches-api",
+      "title": "Chapter 7: Message Batches API",
+      "type": "child"
+    },
+    {
+      "id": "chapter-8-task-decomposition-strategies",
+      "title": "Chapter 8: Task Decomposition Strategies",
+      "type": "child"
+    },
+    {
+      "id": "chapter-9-escalation-and-human-in-the-loop",
+      "title": "Chapter 9: Escalation and Human-in-the-Loop",
+      "type": "child"
+    },
+    {
+      "id": "chapter-10-error-handling-in-multi-agent-systems",
+      "title": "Chapter 10: Error Handling in Multi-agent Systems",
+      "type": "child"
+    },
+    {
+      "id": "chapter-11-context-management-in-production-systems",
+      "title": "Chapter 11: Context Management in Production Systems",
+      "type": "child"
+    },
+    {
+      "id": "chapter-12-preserving-provenance",
+      "title": "Chapter 12: Preserving Provenance",
+      "type": "child"
+    },
+    {
+      "id": "chapter-13-claude-code-built-in-tools",
+      "title": "Chapter 13: Claude Code Built-in Tools",
+      "type": "child"
+    },
+    {
+      "id": "part-ii-exam-domain-notes",
+      "title": "PART II: EXAM DOMAIN NOTES",
+      "type": "section"
+    },
+    {
+      "id": "domain-1-agent-architecture-and-orchestration-27",
+      "title": "Domain 1: Agent Architecture and Orchestration (27%)",
+      "type": "child"
+    },
+    {
+      "id": "domain-2-tool-design-and-mcp-integration-18",
+      "title": "Domain 2: Tool Design and MCP Integration (18%)",
+      "type": "child"
+    },
+    {
+      "id": "domain-3-claude-code-configuration-and-workflows-20",
+      "title": "Domain 3: Claude Code Configuration and Workflows (20%)",
+      "type": "child"
+    },
+    {
+      "id": "domain-4-prompt-engineering-and-structured-output-20",
+      "title": "Domain 4: Prompt Engineering and Structured Output (20%)",
+      "type": "child"
+    },
+    {
+      "id": "domain-5-context-management-and-reliability-15",
+      "title": "Domain 5: Context Management and Reliability (15%)",
+      "type": "child"
+    },
+    {
+      "id": "examples-of-exam-questions-with-explanations",
+      "title": "Examples of Exam Questions with Explanations",
+      "type": "top"
+    },
+    {
+      "id": "practice-test",
+      "title": "Practice Test",
+      "type": "top"
+    },
+    {
+      "id": "practical-exercises",
+      "title": "Practical Exercises",
+      "type": "top"
+    },
+    {
+      "id": "appendix-technologies-and-concepts",
+      "title": "Appendix: Technologies and Concepts",
+      "type": "top"
+    },
+    {
+      "id": "out-of-scope-topics",
+      "title": "Out-of-Scope Topics",
+      "type": "top"
+    },
+    {
+      "id": "preparation-recommendations",
+      "title": "Preparation Recommendations",
+      "type": "top"
+    }
+  ]
+}

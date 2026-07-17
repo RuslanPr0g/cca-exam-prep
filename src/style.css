@@ -541,6 +541,21 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 .guide-toc-item:hover { background: rgba(255,255,255,.05); }
 .guide-toc-item.active { background: rgba(52,211,153,.14); }
 
+/* Nesting: PART rows are section headers; the Chapter/Domain rows beneath them
+   are indented children, with a guide rail so the hierarchy reads at a glance. */
+.guide-toc-item.section { margin-top: .5rem; }
+.guide-toc-item.section:first-child { margin-top: 0; }
+.guide-toc-item.section .guide-toc-link {
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.guide-toc-item.child { margin-left: .55rem; border-left: 1px solid var(--border); }
+.guide-toc-item.child .guide-toc-link { padding-left: .1rem; }
+.guide-toc-item.child.active { border-left-color: var(--success); }
+
 .guide-toc-check {
   flex-shrink: 0;
   background: transparent;
@@ -571,16 +586,6 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 .guide-toc-item.active .guide-toc-link { color: #fff; font-weight: 600; }
 .guide-toc-item.read .guide-toc-link { color: rgba(245,247,255,.45); }
 
-.guide-toc-num {
-  flex-shrink: 0;
-  font-size: .56rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  opacity: .7;
-  min-width: 1.2em;
-  text-align: right;
-}
-
 /* Reader pane */
 .guide-reader {
   flex: 1 1 auto;
@@ -607,6 +612,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 }
 
 .guide-content {
+  min-width: 0; /* let inner tables/code scroll instead of stretching the pane */
   background: #1c1e30;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -714,10 +720,21 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 
 .markdown-body hr { border: none; border-top: 1px solid var(--border); margin: 1.4rem 0; }
 
-.md-table-wrap { overflow-x: auto; margin: 0 0 .9rem; }
+/* Tables scroll horizontally inside their own wrapper rather than crushing
+   their columns on narrow screens. min-width keeps columns readable and forces
+   the wrapper to scroll on mobile instead of the whole page. */
+.md-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 0 .9rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
 .markdown-body table {
   border-collapse: collapse;
   width: 100%;
+  min-width: 32rem;
   font-size: .72rem;
 }
 .markdown-body th,
@@ -727,6 +744,11 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
   text-align: left;
   vertical-align: top;
 }
+/* The wrapper owns the outer border/radius; drop the doubled outer cell edges. */
+.markdown-body table tr > *:first-child { border-left: none; }
+.markdown-body table tr > *:last-child { border-right: none; }
+.markdown-body table thead tr th { border-top: none; }
+.markdown-body table tbody tr:last-child > * { border-bottom: none; }
 .markdown-body th { background: rgba(255,255,255,.06); font-weight: 700; color: #fff; }
 .markdown-body tbody tr:nth-child(even) { background: rgba(255,255,255,.03); }
 
@@ -743,7 +765,10 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
     max-height: none;
   }
   .guide-toc-list { max-height: none; }
-  .guide-reader { display: none; }
+  /* Bound the reader to the single column so wide tables/code scroll inside
+     their own containers rather than stretching the page (which otherwise
+     zooms the mobile viewport out to fit). */
+  .guide-reader { display: none; width: 100%; min-width: 0; }
   .guide-layout.reading .guide-toc { display: none; }
   .guide-layout.reading .guide-reader { display: flex; }
   .guide-back { display: inline-block; }

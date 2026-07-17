@@ -1,0 +1,43 @@
+<h1>Chapter 12: Preserving Provenance</h1>
+<h2>12.1 The Attribution Loss Problem</h2>
+<p>When summarizing results from multiple sources, the “claim → source” link can be lost:</p>
+<pre><code>Bad: "The AI music market is estimated at $3.2B." (No source, no year.)
+
+Good:
+{
+  "claim": "The AI music market is estimated at $3.2B.",
+  "source_url": "https://example.com/report",
+  "source_name": "Global AI Music Report 2024",
+  "publication_date": "2024-06-15",
+  "confidence": 0.9
+}</code></pre>
+<h2>12.2 Handling Conflicting Data</h2>
+<p>When two sources provide different values:</p>
+<pre><code class="lang-json">{
+  "claim": "Share of AI-generated music on streaming platforms",
+  "values": [
+    {
+      "value": "12%",
+      "source": "Spotify Annual Report 2024",
+      "date": "2024-03",
+      "methodology": "Automated classification"
+    },
+    {
+      "value": "8%",
+      "source": "Music Industry Association Survey",
+      "date": "2024-07",
+      "methodology": "Survey of 500 labels"
+    }
+  ],
+  "conflict_detected": true,
+  "possible_explanation": "Difference in methodology and time period"
+}</code></pre>
+<p>Do not arbitrarily choose one value. Preserve both with attribution and let the coordinator decide.</p>
+<h2>12.3 Include Dates for Correct Interpretation</h2>
+<p>Without dates, temporal differences can be misinterpreted as contradictions:</p>
+<pre><code>Bad: "Source A says 10%, source B says 15%. Contradiction."
+Good: "Source A (2023) says 10%, source B (2024) says 15%. Likely +5% growth over a year."</code></pre>
+<h2>12.4 Render by Content Type</h2>
+<p>Don’t force everything into one format:</p>
+<ul><li>Financial data -&gt; tables</li><li>News and analysis -&gt; prose</li><li>Technical findings -&gt; structured lists</li><li>Time series -&gt; chronological ordering</li></ul>
+<hr>

@@ -23,7 +23,7 @@ No account, no sign-up, no tracking — everything lives in your browser.
 
 Have a question that should be in the bank, or spotted one that's wrong? Open an issue or a PR. See `reports/ai-questions-authoring-guide.md` for the format used by the AI-generated bank.
 
-The study guide text (`public/guide.md`) comes from [paullarionov/claude-certified-architect](https://github.com/paullarionov/claude-certified-architect).
+The study guide text (`content/guide.md`) comes from [paullarionov/claude-certified-architect](https://github.com/paullarionov/claude-certified-architect). It is pre-rendered into static HTML pages under `public/guide/` at build time by `scripts/build-guide.mjs` (run automatically via `npm run build`).
 
 ## Running it locally
 

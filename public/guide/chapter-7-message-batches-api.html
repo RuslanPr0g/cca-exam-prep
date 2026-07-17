@@ -1,0 +1,24 @@
+<h1>Chapter 7: Message Batches API</h1>
+<blockquote><p>Documentation: <a href="https://platform.claude.com/docs/en/build-with-claude/message-batches" target="_blank" rel="noopener noreferrer">Message Batches</a></p></blockquote>
+<h2>7.1 Overview</h2>
+<p>The Message Batches API lets you submit batches of requests for asynchronous processing:</p>
+<div class="md-table-wrap"><table><thead><tr><th>Attribute</th><th>Value</th></tr></thead><tbody><tr><td>Savings</td><td><strong>50%</strong> compared to synchronous calls</td></tr><tr><td>Processing window</td><td>Up to <strong>24 hours</strong> (no latency SLA guarantee)</td></tr><tr><td>Multi-turn tool calling</td><td><strong>Not supported</strong> (one request = one response)</td></tr><tr><td>Correlation</td><td><code>custom_id</code> field to link request and response</td></tr></tbody></table></div>
+<h2>7.2 When to Use Batch API vs Synchronous API</h2>
+<div class="md-table-wrap"><table><thead><tr><th>Task</th><th>API</th><th>Why</th></tr></thead><tbody><tr><td>Pre-merge PR check</td><td><strong>Synchronous</strong></td><td>The developer is waiting; 24 hours is unacceptable</td></tr><tr><td>Overnight tech-debt report</td><td><strong>Batch</strong></td><td>Result is needed by morning; 50% savings</td></tr><tr><td>Weekly security audit</td><td><strong>Batch</strong></td><td>Not urgent; 50% savings</td></tr><tr><td>Interactive code review</td><td><strong>Synchronous</strong></td><td>Immediate response required</td></tr><tr><td>Processing 10,000 documents</td><td><strong>Batch</strong></td><td>Bulk processing; savings are significant</td></tr></tbody></table></div>
+<h2>7.3 Using <code>custom_id</code></h2>
+<pre><code class="lang-json">{
+  "custom_id": "doc-invoice-2024-001",
+  "params": {
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Extract data from: ..."}]
+  }
+}</code></pre>
+<p><code>custom_id</code> allows you to:</p>
+<ul><li>Link the result to the original document</li><li>On failure, re-submit only the failed documents</li><li>Avoid re-processing successful documents</li></ul>
+<h2>7.4 Handling Failures in Batches</h2>
+<ol><li>Submit a batch of 100 documents</li><li>95 succeed; 5 fail (context limit exceeded)</li><li>Identify failures by <code>custom_id</code></li><li>Modify strategy (e.g., split long documents into chunks)</li><li>Re-submit only the 5 failed documents</li></ol>
+<h2>7.5 SLA Planning</h2>
+<p>If you need a result in 30 hours and the Batch API can take up to 24 hours:</p>
+<ul><li>Submission window: 30 - 24 = <strong>6 hours</strong></li><li>Batches must be submitted no later than 24 hours before the deadline</li><li>For frequent submissions, split into 4-hour windows</li></ul>
+<hr>

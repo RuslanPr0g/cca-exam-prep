@@ -1,0 +1,35 @@
+<h1>Claude Certified Architect — Foundations Certification</h1>
+<h2>Study Guide (Based on the Official Exam Guide)</h2>
+<hr>
+<h2>Introduction</h2>
+<p>The <strong>Claude Certified Architect — Foundations</strong> certification confirms that a specialist can make sound trade-off decisions when implementing real-world Claude-based solutions. The exam assesses foundational knowledge of Claude Code, the Claude Agent SDK, the Claude API, and the Model Context Protocol (MCP)—the core technologies for building production applications with Claude.</p>
+<p>The exam questions are based on realistic industry scenarios: building agentic systems for customer support, designing multi-agent research pipelines, integrating Claude Code into CI/CD, creating developer productivity tools, and extracting structured data from unstructured documents.</p>
+<hr>
+<h2>Target Candidate</h2>
+<p>The ideal candidate is a <strong>solution architect</strong> who designs and ships production applications with Claude. You should have at least 6 months of hands-on experience with:</p>
+<ul><li><strong>Claude Agent SDK</strong> — multi-agent orchestration, delegating to subagents, tool integration, lifecycle hooks</li><li><strong>Claude Code</strong> — CLAUDE.md, MCP servers, Agent Skills, planning mode</li><li><strong>Model Context Protocol (MCP)</strong> — tools and resources for backend integration</li><li><strong>Prompt engineering</strong> — JSON schemas, few-shot examples, data extraction templates</li><li><strong>Context windows</strong> — working with long documents, multi-agent context passing</li><li><strong>CI/CD pipelines</strong> — automated code review, test generation</li><li><strong>Escalation and reliability</strong> — error handling, human-in-the-loop</li></ul>
+<hr>
+<h2>Exam Format</h2>
+<div class="md-table-wrap"><table><thead><tr><th>Parameter</th><th>Value</th></tr></thead><tbody><tr><td>Question type</td><td>Multiple choice (1 correct out of 4)</td></tr><tr><td>Scoring</td><td>100–1000 scale, passing score <strong>720</strong></td></tr><tr><td>Guessing penalty</td><td>None (answer every question!)</td></tr><tr><td>Scenarios</td><td>4 out of 8 possible (randomly selected)</td></tr></tbody></table></div>
+<hr>
+<h2>Exam Content: 5 Domains</h2>
+<div class="md-table-wrap"><table><thead><tr><th>Domain</th><th>Weight</th></tr></thead><tbody><tr><td>1. Agent architecture and orchestration</td><td><strong>27%</strong></td></tr><tr><td>2. Tool design and MCP integration</td><td><strong>18%</strong></td></tr><tr><td>3. Claude Code configuration and workflows</td><td><strong>20%</strong></td></tr><tr><td>4. Prompt engineering and structured output</td><td><strong>20%</strong></td></tr><tr><td>5. Context management and reliability</td><td><strong>15%</strong></td></tr></tbody></table></div>
+<hr>
+<h2>Exam Scenarios</h2>
+<h3>Scenario 1: Customer Support Agent</h3>
+<p>You build an agent to handle returns, billing disputes, and account issues using the Claude Agent SDK. The agent uses MCP tools (<code>get_customer</code>, <code>lookup_order</code>, <code>process_refund</code>, <code>escalate_to_human</code>). The target is 80%+ first-contact resolution with appropriate escalation.</p>
+<h3>Scenario 2: Code Generation with Claude Code</h3>
+<p>You use Claude Code to accelerate development: code generation, refactoring, debugging, documentation. You need to integrate it with custom slash commands and CLAUDE.md configuration, and understand when to use planning mode.</p>
+<h3>Scenario 3: Multi-Agent Research System</h3>
+<p>A coordinator agent delegates tasks to specialized subagents: web research, document analysis, synthesis, and report generation. The system must produce complete reports with citations.</p>
+<h3>Scenario 4: Developer Productivity Tools</h3>
+<p>The agent helps engineers explore unfamiliar codebases, generate boilerplate code, and automate routine tasks. Built-in tools (Read, Write, Bash, Grep, Glob) and MCP servers are used.</p>
+<h3>Scenario 5: Claude Code for Continuous Integration</h3>
+<p>Integrate Claude Code into a CI/CD pipeline for automated code reviews, test generation, and pull request feedback. Prompts must be designed to minimize false positives.</p>
+<h3>Scenario 6: Structured Data Extraction</h3>
+<p>The system extracts information from unstructured documents, validates output with JSON schemas, and maintains high accuracy. It must correctly handle edge cases.</p>
+<h3>Scenario 7: Conversational AI Architecture Patterns</h3>
+<p>You design multi-turn conversational systems covering context window management, instruction persistence across turns, memory strategies, tool design for safe execution, and handling ambiguous or conflicting user inputs.</p>
+<h3>Scenario 8: Agentic AI Tools <em>(content missing — help us fill it in!)</em></h3>
+<p>This scenario has been reported by exam candidates but is not yet covered in this guide. If you have encountered questions from this scenario on the real exam, please share them in <a href="https://github.com/paullarionov/claude-certified-architect/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a> so we can add full coverage. Your contribution will help everyone preparing for the exam.</p>
+<hr>

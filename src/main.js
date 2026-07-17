@@ -17,7 +17,6 @@ import {
   getGuideLast,
   setGuideLast,
 } from './store.js';
-import { renderMarkdown, splitChapters } from './markdown.js';
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 // One explicit tab replaces the old two independent toggles (hard mode x
@@ -144,9 +143,12 @@ let activeTab    = tabFromRoute(currentRoute());
 let answered     = false; // BUG-06: guard against double-answer race
 
 // Study Guide state (lazily loaded the first time the Guide tab is opened).
+// Chapters come from a build-time manifest (see scripts/build-guide.mjs); each
+// chapter's rendered HTML is fetched on demand and cached here.
 let guideChapters = [];
 let guideLoaded   = false;
 let guideCurrentId = null;
+const guideHtmlCache = new Map();
 
 // ── Tab / question-set helpers ────────────────────────────────────────────────
 function getSourceQuestions(tab) {
@@ -467,9 +469,12 @@ window.addEventListener('popstate', () => {
 });
 
 // ── Study Guide ─────────────────────────────────────────────────────────────
-// The guide is a big Markdown document (public/guide.md) split into chapters.
-// It's fetched and parsed lazily the first time the tab is opened, then read
-// per-chapter with read-state persisted in localStorage (see store.js).
+// The guide ships as pre-rendered static HTML pages (one per chapter) plus a
+// manifest describing chapter order and PART → chapter nesting — all generated
+// from public/guide.md at build time by scripts/build-guide.mjs. The runtime
+// just fetches the manifest, builds a nested table of contents, and injects the
+// pre-rendered HTML of whichever chapter is open. Read-state per chapter is
+// persisted in localStorage (see store.js).
 
 async function showGuide() {
   showScreen('guide');
@@ -500,22 +505,36 @@ async function showGuide() {
 
 async function loadGuide() {
   try {
-    const res = await fetch(`${import.meta.env.BASE_URL}guide.md`);
+    const res = await fetch(`${import.meta.env.BASE_URL}guide/manifest.json`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const md = await res.text();
-    guideChapters = splitChapters(md);
+    const manifest = await res.json();
+    guideChapters = manifest.chapters ?? [];
   } catch (err) {
-    console.error('Failed to load study guide:', err);
+    console.error('Failed to load study guide manifest:', err);
     guideChapters = [];
   }
   guideLoaded = true;
 }
 
+// Fetch (and cache) a chapter's pre-rendered HTML page.
+async function fetchChapterHtml(id) {
+  if (guideHtmlCache.has(id)) return guideHtmlCache.get(id);
+  const res = await fetch(`${import.meta.env.BASE_URL}guide/${id}.html`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const html = await res.text();
+  guideHtmlCache.set(id, html);
+  return html;
+}
+
 function buildToc() {
   guideTocList.innerHTML = '';
-  guideChapters.forEach((ch, idx) => {
+  guideChapters.forEach((ch) => {
     const li = document.createElement('li');
     li.className = 'guide-toc-item';
+    // PART headings are section labels; the Chapter/Domain entries under them
+    // are children (indented). Everything else sits at the top level.
+    if (ch.type === 'section') li.classList.add('section');
+    if (ch.type === 'child')   li.classList.add('child');
     li.dataset.id = ch.id;
     if (ch.id === guideCurrentId) li.classList.add('active');
     if (isGuideRead(ch.id))       li.classList.add('read');
@@ -532,7 +551,7 @@ function buildToc() {
 
     const link = document.createElement('button');
     link.className = 'guide-toc-link';
-    link.innerHTML = `<span class="guide-toc-num">${idx + 1}</span><span class="guide-toc-text">${escapeText(ch.title)}</span>`;
+    link.textContent = ch.title;
     link.addEventListener('click', () => selectChapter(ch.id, { openReader: true }));
 
     li.appendChild(check);
@@ -563,14 +582,12 @@ function updateGuideStats() {
   statsEl.innerHTML = `<span class="stat-item"><strong>${read}</strong> / ${total} read</span>`;
 }
 
-function selectChapter(id, { openReader = false } = {}) {
+async function selectChapter(id, { openReader = false } = {}) {
   const ch = guideChapters.find(c => c.id === id);
   if (!ch) return;
 
   guideCurrentId = id;
   setGuideLast(id);
-
-  guideContent.innerHTML = renderMarkdown(ch.markdown);
 
   // Highlight the active chapter in the TOC.
   Array.from(guideTocList.children).forEach(li => {
@@ -592,6 +609,18 @@ function selectChapter(id, { openReader = false } = {}) {
   // Start each chapter from the top (the page itself scrolls, not the article).
   window.scrollTo({ top: 0 });
   guideContent.scrollTop = 0;
+
+  // Inject the chapter's pre-rendered HTML page. Guard against a slower fetch
+  // for a chapter the user has since navigated away from.
+  try {
+    const html = await fetchChapterHtml(id);
+    if (guideCurrentId === id) guideContent.innerHTML = html;
+  } catch (err) {
+    console.error('Failed to load chapter:', id, err);
+    if (guideCurrentId === id) {
+      guideContent.innerHTML = '<p class="guide-error">⚠️ Failed to load this chapter. Please refresh.</p>';
+    }
+  }
 }
 
 function setMarkReadButton() {
@@ -621,12 +650,6 @@ function handleGuideReadNext() {
     refreshGuideReadUI();
   }
   handleGuideNav(1);
-}
-
-// Small helper for text inserted via innerHTML in the TOC (titles are already
-// markdown-stripped by splitChapters, but escape defensively all the same).
-function escapeText(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // ── Space background (fewer stars on narrow viewports, never fully hidden) ──

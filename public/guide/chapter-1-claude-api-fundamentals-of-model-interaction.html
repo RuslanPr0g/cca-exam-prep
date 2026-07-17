@@ -1,0 +1,36 @@
+<h1>Chapter 1: Claude API — Fundamentals of Model Interaction</h1>
+<blockquote><p>Documentation: <a href="https://platform.claude.com/docs/en/api/messages" target="_blank" rel="noopener noreferrer">Messages API</a> | <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview" target="_blank" rel="noopener noreferrer">Prompt Engineering</a></p></blockquote>
+<h2>1.1 API Request Structure</h2>
+<p>The Claude API follows a request–response model. Each request to the Claude Messages API includes:</p>
+<pre><code class="lang-json">{
+  "model": "claude-sonnet-4-6",
+  "max_tokens": 1024,
+  "system": "You are a helpful assistant.",
+  "messages": [
+    {"role": "user", "content": "Hi!"},
+    {"role": "assistant", "content": "Hello!"},
+    {"role": "user", "content": "How are you?"}
+  ],
+  "tools": [...],
+  "tool_choice": {"type": "auto"}
+}</code></pre>
+<p><strong>Key fields:</strong></p>
+<ul><li><code>model</code> — model selection (<code>claude-opus-4-6</code>, <code>claude-sonnet-4-6</code>, <code>claude-haiku-4-5</code>)</li><li><code>max_tokens</code> — maximum number of tokens in the response</li><li><code>system</code> — the system prompt (defines model behavior)</li><li><code>messages</code> — conversation history (<strong>you must send the full history</strong> to maintain coherence)</li><li><code>tools</code> — definitions of available tools</li><li><code>tool_choice</code> — tool selection strategy</li></ul>
+<h2>1.2 Message Roles</h2>
+<p>The <code>messages</code> array uses three roles:</p>
+<ul><li><code>user</code> — user messages</li><li><code>assistant</code> — model responses (included when sending history)</li><li><code>tool</code> — tool call results (the role is not explicitly set; this appears as a <code>tool_result</code> content block)</li></ul>
+<p><strong>Critically important:</strong> on every API request you must send the <strong>full conversation history</strong>. The model does not persist state between requests—each call is independent.</p>
+<h2>1.3 The <code>stop_reason</code> Field in the Response</h2>
+<p>The Claude API response includes <code>stop_reason</code>, which indicates why the model stopped generating:</p>
+<div class="md-table-wrap"><table><thead><tr><th>Value</th><th>Description</th><th>Action</th></tr></thead><tbody><tr><td><code>"end_turn"</code></td><td>The model finished its response</td><td>Show the result to the user</td></tr><tr><td><code>"tool_use"</code></td><td>The model wants to call a tool</td><td>Execute the tool and return the result</td></tr><tr><td><code>"max_tokens"</code></td><td>Token limit reached</td><td>The response is truncated; you may need to increase the limit</td></tr><tr><td><code>"stop_sequence"</code></td><td>A stop sequence was encountered</td><td>Handle based on your application logic</td></tr></tbody></table></div>
+<p>For agentic systems, <code>"tool_use"</code> and <code>"end_turn"</code> are the most important—they control the agent loop.</p>
+<h2>1.4 System Prompt</h2>
+<p>The system prompt is a special instruction that defines context and behavioral rules. It:</p>
+<ul><li>Is not part of the <code>messages</code> array; it is passed separately in the <code>system</code> field</li><li>Has priority over user messages</li><li>Is loaded once and applies throughout the conversation</li><li>Is used to define role, constraints, and output format</li></ul>
+<p><strong>Important for the exam:</strong> system prompt wording can create unintended tool associations. For example, an instruction like “always verify the customer” can cause the model to overuse <code>get_customer</code>, even when it is unnecessary.</p>
+<h2>1.5 Context Window</h2>
+<p>The context window is the total amount of text (in tokens) the model can process at once. It includes:</p>
+<ul><li>The system prompt</li><li>The full message history</li><li>Tool definitions</li><li>Tool results</li></ul>
+<p><strong>Key context-window problems:</strong></p>
+<ol><li><strong>Lost-in-the-middle effect:</strong> models reliably process information at the start and end of a long input but can miss details in the middle. Mitigation: place key information near the beginning or end.</li><li><strong>Accumulation of tool results:</strong> every tool call adds output to the context. If a tool returns 40+ fields but only 5 matter, then most of the context is wasted.</li><li><strong>Progressive summarization:</strong> when compressing history, numeric values, percentages, and dates often get lost and become vague (“about”, “roughly”, “a few”).</li></ol>
+<hr>

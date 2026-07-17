@@ -1,0 +1,32 @@
+<h1>Domain 3: Claude Code Configuration and Workflows (20%)</h1>
+<h2>3.1 Configuring CLAUDE.md with Hierarchy, Scope, and Modular Organization</h2>
+<h3>Key knowledge:</h3>
+<ul><li>CLAUDE.md hierarchy: user (<code>~/.claude/CLAUDE.md</code>), project (<code>.claude/CLAUDE.md</code> or root <code>CLAUDE.md</code>), and directory-level (CLAUDE.md in subdirectories)</li><li>User-level settings apply only to one user and are not shared via VCS</li><li><code>@path</code> syntax for referencing external files (e.g., <code>@./standards/coding-style.md</code>) to modularize CLAUDE.md</li><li>The <code>.claude/rules/</code> directory for topic-focused rule files instead of a monolithic CLAUDE.md</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Diagnose hierarchy issues (a new team member misses instructions because they are user-level instead of project-level)</li><li>Use <code>@path</code> (e.g., <code>@./standards/testing.md</code>) to selectively include standards in each package’s CLAUDE.md</li><li>Split large CLAUDE.md into multiple <code>.claude/rules/</code> files (testing.md, api-conventions.md, deployment.md)</li></ul>
+<h2>3.2 Creating and Configuring Custom Slash Commands and Skills</h2>
+<h3>Key knowledge:</h3>
+<ul><li><strong>Project commands</strong> in <code>.claude/commands/</code> (shared via VCS) vs <strong>user commands</strong> in <code>~/.claude/commands/</code></li><li>Skills in <code>.claude/skills/</code> with <code>SKILL.md</code> frontmatter: <code>context: fork</code>, <code>allowed-tools</code>, <code>argument-hint</code></li><li><code>context: fork</code> runs the skill in an isolated subagent context so it does not pollute the main session</li><li>Personal skill variants can live in <code>~/.claude/skills/</code> under different names</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Store project slash commands in <code>.claude/commands/</code> so the whole team gets them</li><li>Use <code>context: fork</code> to isolate skills with verbose output</li><li>Use <code>allowed-tools</code> to restrict what tools a skill can use</li><li>Use <code>argument-hint</code> to prompt developers for required parameters</li></ul>
+<h2>3.3 Using Path-specific Rules for Conditional Convention Loading</h2>
+<h3>Key knowledge:</h3>
+<ul><li><code>.claude/rules/</code> files can include YAML frontmatter <code>paths</code> to activate rules based on glob patterns</li><li>Path-scoped rules load <strong>only</strong> when editing matching files, saving context and tokens</li><li>Glob-based path rules can be preferable to directory-level CLAUDE.md when conventions apply across many directories (e.g., tests)</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Create <code>.claude/rules/</code> files with <code>paths: ["terraform/**/*"]</code> to load only when working on matching files</li><li>Use glob patterns (<code>**/*.test.tsx</code>) to apply conventions by file type regardless of location</li><li>Prefer path-specific rules over directory-level CLAUDE.md when conventions span the codebase</li></ul>
+<h2>3.4 Deciding When to Use Planning Mode vs Direct Execution</h2>
+<h3>Key knowledge:</h3>
+<ul><li><strong>Planning mode</strong>: for complex tasks with large changes, multiple viable approaches, and architectural decisions</li><li><strong>Direct execution</strong>: for simple, well-understood changes (e.g., adding a single validation)</li><li>Planning mode enables safe exploration of the codebase before making changes</li><li>Explore subagent isolates verbose discovery output</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Use planning mode for tasks with architectural consequences (microservices, migrations touching 45+ files)</li><li>Use direct execution for fixes with a clear stack trace and a single file</li><li>Use Explore subagent to prevent context-window exhaustion in multi-phase tasks</li><li>Combine approaches: plan for discovery, then execute for implementation</li></ul>
+<h2>3.5 Iterative Refinement for Progressive Improvement</h2>
+<h3>Key knowledge:</h3>
+<ul><li>Concrete input/output examples are the most effective way to communicate expectations</li><li><strong>Test-driven iteration</strong>: write tests first, then iterate based on failures</li><li>The “interview” pattern: Claude asks questions to surface non-obvious design considerations</li><li>When to provide all issues in one message (interdependent) vs sequentially (independent)</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Provide 2–3 concrete input/output examples to clarify transformation requirements</li><li>Build test sets with expected behavior, edge cases, and performance requirements before implementation</li><li>Use the interview pattern to surface design aspects (cache invalidation, failure modes)</li><li>Provide concrete test cases with sample inputs and expected outputs for edge cases</li></ul>
+<h2>3.6 Integrating Claude Code into CI/CD Pipelines</h2>
+<h3>Key knowledge:</h3>
+<ul><li>The <code>-p</code> (or <code>--print</code>) flag for non-interactive mode in automated pipelines</li><li><code>--output-format json</code> and <code>--json-schema</code> for structured output in CI</li><li>CLAUDE.md provides project context (testing standards, review criteria) for CI-triggered Claude Code</li><li><strong>Session context isolation</strong>: the same session that generated code is less effective at reviewing it than an independent instance</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Run Claude Code in CI with <code>-p</code> to avoid hanging on interactive input</li><li>Use <code>--output-format json</code> + <code>--json-schema</code> for structured results (e.g., inline PR comments)</li><li>Include prior review results when re-running after new commits (report only new/unfixed issues)</li><li>Document testing standards and available fixtures in CLAUDE.md to improve test generation quality</li><li>Include existing test files in context when generating new tests to avoid duplication and keep style consistent</li></ul>
+<hr>

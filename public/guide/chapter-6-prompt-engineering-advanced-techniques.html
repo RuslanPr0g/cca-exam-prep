@@ -1,0 +1,126 @@
+<h1>Chapter 6: Prompt Engineering — Advanced Techniques</h1>
+<blockquote><p>Documentation: <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview" target="_blank" rel="noopener noreferrer">Prompt Engineering</a> | <a href="https://github.com/anthropics/anthropic-cookbook" target="_blank" rel="noopener noreferrer">Anthropic Cookbook</a></p></blockquote>
+<h2>6.1 Few-shot Prompting</h2>
+<p>Few-shot prompting is the inclusion of 2–4 input/output examples in a prompt to demonstrate the expected behavior.</p>
+<p><strong>Why few-shot is more effective than textual descriptions:</strong></p>
+<ul><li>A vague instruction like “be more precise” can be interpreted in many ways</li><li>An example unambiguously shows the expected format and decision logic</li><li>The model generalizes the pattern to new cases (it does not just repeat the examples)</li></ul>
+<p><strong>Types of few-shot examples and when to use them:</strong></p>
+<ol><li><strong>Examples for ambiguous scenarios:</strong></li></ol>
+<pre><code>Request: "My order is broken"
+Action: Call get_customer -&gt; lookup_order -&gt; check status.
+Rationale: “broken” may mean a damaged item; you need order details.
+
+Request: "Get me a manager"
+Action: Immediately call escalate_to_human.
+Rationale: The customer explicitly requests a human. Do not attempt to solve autonomously.</code></pre>
+<ol><li><strong>Examples for output formatting:</strong></li></ol>
+<pre><code>Finding example:
+{
+  "location": "src/auth/login.ts:42",
+  "issue": "SQL injection in the username parameter",
+  "severity": "critical",
+  "suggested_fix": "Use a parameterized query"
+}</code></pre>
+<ol><li><strong>Examples to separate acceptable vs problematic code:</strong></li></ol>
+<pre><code>// Acceptable (do not flag):
+const items = data.filter(x =&gt; x.active);
+
+// Problem (flag):
+const items = data.filter(x =&gt; x.active == true); // Use strict equality ===</code></pre>
+<ol><li><strong>Examples for extraction from different document formats:</strong></li></ol>
+<pre><code>Document with inline citations:
+"As shown in the study (Smith, 2023), the rate is 42%."
+-&gt; {"value": "42%", "source": "Smith, 2023", "type": "inline_citation"}
+
+Document with bibliography references:
+"The rate is 42%. [1]"
+-&gt; {"value": "42%", "source": "reference_1", "type": "bibliography"}</code></pre>
+<ol><li><strong>Examples for informal measurements:</strong></li></ol>
+<pre><code>Text: "about two handfuls of rice"
+-&gt; {"amount": "~100g", "original_text": "two handfuls", "precision": "approximate"}
+
+Text: "a pinch of salt"
+-&gt; {"amount": "~1g", "original_text": "a pinch", "precision": "approximate"}</code></pre>
+<p>Few-shot is especially effective for extracting informal and non-standard measurement units that are too diverse for purely rule-based instructions.</p>
+<p><strong>Format normalization rules in prompts:</strong> When using strict JSON schemas for structured output, add normalization rules in the prompt:</p>
+<pre><code>Normalization:
+- Dates: always ISO 8601 (YYYY-MM-DD); "yesterday" -&gt; compute an absolute date
+- Currency: numeric amount + currency code; "five bucks" -&gt; {"amount": 5, "currency": "USD"}
+- Percentages: decimal fraction; "half" -&gt; 0.5</code></pre>
+<p>This prevents semantic errors where the JSON is syntactically valid but values are inconsistent.</p>
+<h2>6.2 Explicit Criteria vs Vague Instructions</h2>
+<p><strong>Bad (vague):</strong></p>
+<pre><code>Check code comments for accuracy.
+Be conservative—report only high-confidence findings.</code></pre>
+<p><strong>Good (explicit criteria):</strong></p>
+<pre><code>Flag a comment as problematic ONLY if:
+1. The comment describes behavior that CONTRADICTS the actual code behavior
+2. The comment references a non-existent function or variable
+3. A TODO/FIXME comment refers to a bug that has already been fixed in code
+
+Do NOT flag:
+- Comments that are merely stylistically outdated
+- Comments with minor wording inaccuracies
+- Missing comments (that is a separate category)</code></pre>
+<p><strong>Define severity criteria with examples:</strong></p>
+<pre><code>CRITICAL: Runtime failure for users
+  Example: NullPointerException while processing a payment
+
+HIGH: Security vulnerability
+  Example: SQL injection, XSS, missing authorization checks
+
+MEDIUM: Logic bug without immediate impact
+  Example: Wrong sorting, off-by-one error
+
+LOW: Code quality
+  Example: Duplication, suboptimal algorithm for small data</code></pre>
+<h2>6.3 Prompt Chaining</h2>
+<p>Prompt chaining breaks a complex task into a sequence of focused steps:</p>
+<pre><code>Step 1: Analyze auth.ts (local issues only)
+       -&gt; Output: list of issues in auth.ts
+
+Step 2: Analyze database.ts (local issues only)
+       -&gt; Output: list of issues in database.ts
+
+Step 3: Integration pass (cross-file dependencies)
+       -&gt; Output: issues at module boundaries</code></pre>
+<p><strong>Why this matters:</strong></p>
+<ul><li>Avoids <strong>attention dilution</strong>—when the model receives too many files at once, it may miss bugs in some files while providing shallow commentary on others</li><li>Ensures consistent analysis quality per file</li><li>Allows separate analysis of cross-file interactions</li></ul>
+<p><strong>When to use prompt chaining vs dynamic decomposition:</strong></p>
+<ul><li><strong>Prompt chaining</strong> — predictable, repeatable tasks (code review, file migrations)</li><li><strong>Dynamic decomposition</strong> — open-ended investigations where subtasks become clear only during execution</li></ul>
+<h2>6.4 The “Interview” Pattern</h2>
+<p>Before implementing a solution, Claude asks clarifying questions:</p>
+<pre><code>Claude: "Before implementing caching for the API, a few questions:
+1. Which cache invalidation strategy do you prefer—TTL or event-based?
+2. Is stale data acceptable when the cache is unavailable?
+3. Should caching be per-user or global?
+4. What is the expected data volume to cache?"</code></pre>
+<p><strong>When this is useful:</strong></p>
+<ul><li>Unfamiliar domain (fintech, healthcare, legal systems)</li><li>Tasks with non-obvious implications (cache strategies, failure modes)</li><li>Multiple viable approaches where the best choice depends on context</li></ul>
+<h2>6.5 Validation and Retry-with-Feedback</h2>
+<p>When extracted data fails validation:</p>
+<pre><code>Step 1: Extract data from the document
+Step 2: Validate (Pydantic, JSON Schema, business rules)
+Step 3: If there's an error—retry with context:
+  - The original document
+  - The previous (incorrect) extraction
+  - The specific error: "Field 'total' = 150, but sum(line_items) = 145. Re-check values."</code></pre>
+<p><strong>When retry will be effective:</strong></p>
+<ul><li>Format errors (date in the wrong format)</li><li>Structural errors (a field placed in the wrong location)</li><li>Arithmetic inconsistencies (the model can re-check)</li></ul>
+<p><strong>When retry will NOT help:</strong></p>
+<ul><li>The information is absent from the source document</li><li>The required context is external (the data is in another document not provided)</li></ul>
+<p><strong>Pydantic as a validation tool:</strong> Pydantic is a Python library for schema-based data validation. For the exam, the key points are:</p>
+<ul><li><strong>Structural validation:</strong> types, requiredness, enum constraints checked in code after receiving JSON from Claude</li><li><strong>Semantic validation:</strong> custom validators enforce business logic (sum of items equals total; start_date &lt; end_date)</li><li><strong>Validate–retry loops:</strong> on Pydantic validation failure, construct an error message and re-prompt Claude with the error context</li><li><strong>JSON Schema generation:</strong> Pydantic models can generate JSON Schema for <code>tool_use</code>, providing a single source of truth</li></ul>
+<h2>6.6 Self-correction</h2>
+<p>A pattern for detecting internal contradictions:</p>
+<pre><code class="lang-json">{
+  "stated_total": "$150.00",
+  "calculated_total": "$145.00",
+  "conflict_detected": true,
+  "line_items": [
+    {"name": "Widget A", "price": 75.00},
+    {"name": "Widget B", "price": 70.00}
+  ]
+}</code></pre>
+<p>The model extracts both the stated value and a computed value—if they differ, <code>conflict_detected</code> allows you to handle the discrepancy.</p>
+<hr>

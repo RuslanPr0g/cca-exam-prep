@@ -1,0 +1,27 @@
+<h1>Domain 2: Tool Design and MCP Integration (18%)</h1>
+<h2>2.1 Designing Tool Interfaces with Clear Descriptions</h2>
+<h3>Key knowledge:</h3>
+<ul><li>Tool descriptions are the <strong>primary mechanism</strong> an LLM uses to select tools; minimal descriptions lead to unreliable selection</li><li>The importance of including input formats, example queries, edge cases, and applicability boundaries</li><li>Ambiguous or overlapping descriptions cause misrouting</li><li>System prompt wording can create unintended associations with tools</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Write descriptions that clearly distinguish each tool from similar alternatives</li><li>Rename tools to eliminate functional overlap (e.g., <code>analyze_content</code> -&gt; <code>extract_web_results</code>)</li><li>Split general-purpose tools into specialized ones with clear input/output contracts</li></ul>
+<h2>2.2 Implementing Structured Error Responses for MCP Tools</h2>
+<h3>Key knowledge:</h3>
+<ul><li>The <code>isError</code> flag in MCP tool responses</li><li>The difference between <strong>transient errors</strong> (timeouts), <strong>validation errors</strong> (bad input), <strong>business errors</strong> (policy violations), and <strong>access/permission errors</strong></li><li>Generic errors ("Operation failed") prevent correct recovery decisions</li><li>The difference between retryable and non-retryable errors</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Return structured metadata such as <code>errorCategory</code> (transient/validation/permission), <code>isRetryable</code>, and a human-readable message</li><li>Use <code>retryable: false</code> for business-rule violations with clear user-facing explanations</li><li>Do local recovery inside subagents for transient failures; propagate only errors they cannot resolve</li><li>Distinguish access failures (retry decision) from valid empty results (no matches)</li></ul>
+<h2>2.3 Allocating Tools Across Agents and Configuring <code>tool_choice</code></h2>
+<h3>Key knowledge:</h3>
+<ul><li>Too many tools per agent (e.g., 18 instead of 4–5) <strong>reduces</strong> tool selection reliability</li><li>Agents with tools outside their specialization tend to misuse them</li><li>Scoped tool access: only role-relevant tools plus a limited set of cross-role utilities</li><li><code>tool_choice</code>: <code>"auto"</code>, <code>"any"</code>, and forced tool selection (<code>{"type": "tool", "name": "..."}</code>)</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Restrict each subagent’s toolset to what is relevant for its role</li><li>Replace general tools with constrained alternatives (e.g., <code>fetch_url</code> -&gt; <code>load_document</code>)</li><li>Use <code>tool_choice: "any"</code> to guarantee a tool call instead of a text answer</li><li>Force a specific tool to ensure execution order</li></ul>
+<h2>2.4 Integrating MCP Servers into Claude Code and Agent Workflows</h2>
+<h3>Key knowledge:</h3>
+<ul><li>MCP server scope: project (<code>.mcp.json</code>) for teams vs user (<code>~/.claude.json</code>) for experiments</li><li>Environment variable substitution in <code>.mcp.json</code> (e.g., <code>${GITHUB_TOKEN}</code>) for secret management</li><li>Tools from all connected MCP servers are discovered on connection and are available simultaneously</li><li>MCP resources as “content catalogs” (task summaries, database schemas) to reduce exploratory tool calls</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Configure shared MCP servers in project <code>.mcp.json</code> with env-var-based tokens</li><li>Keep personal/experimental servers in <code>~/.claude.json</code></li><li>Prefer community MCP servers over custom servers for standard integrations</li></ul>
+<h2>2.5 Selecting and Applying Built-in Tools (Read, Write, Edit, Bash, Grep, Glob)</h2>
+<h3>Key knowledge:</h3>
+<ul><li><strong>Grep</strong>: search within file contents (function names, error messages, imports)</li><li><strong>Glob</strong>: find files by name/extension patterns</li><li><strong>Read/Write</strong>: full-file operations; <strong>Edit</strong>: precise changes via unique text matches</li><li>If Edit fails due to non-unique matches, fall back to Read + Write</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Use Grep for content search and Glob for file discovery by patterns</li><li>Build understanding incrementally: Grep entry points, then Read to trace flows</li><li>Trace function usage through wrapper modules</li></ul>
+<hr>

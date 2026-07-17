@@ -1,0 +1,32 @@
+<h1>Domain 5: Context Management and Reliability (15%)</h1>
+<h2>5.1 Managing Conversation Context to Preserve Critical Information</h2>
+<h3>Key knowledge:</h3>
+<ul><li>Risks of progressive summarization: numeric values, percentages, and dates get condensed into vague summaries</li><li>Lost-in-the-middle effect: models reliably process the start and end of long inputs, but may miss findings from the middle</li><li>Tool outputs can accumulate in context disproportionately to relevance (40+ fields when 5 are needed)</li><li>The importance of sending the full conversation history in subsequent API requests</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Extract transactional facts into a persistent “case facts” block outside the summarized history</li><li>Trim verbose tool outputs down to relevant fields</li><li>Place key findings at the beginning of aggregated data with explicit section headings</li><li>Require subagents to include metadata (dates, sources) in structured outputs</li></ul>
+<h2>5.2 Designing Effective Escalation Patterns and Resolving Ambiguity</h2>
+<h3>Key knowledge:</h3>
+<ul><li>Suitable escalation triggers: explicit request for a human, policy gaps/exceptions, inability to make progress</li><li>Immediate escalation (explicit request) vs attempt-to-resolve (within agent scope)</li><li>Sentiment analysis and model confidence self-ratings are unreliable proxies for case complexity</li><li>Multiple customer matches require asking for additional identifiers, not heuristic guessing</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Explicit escalation criteria with few-shot examples in the system prompt</li><li>Execute explicit requests for a human immediately without additional investigation</li><li>Escalate when policy is ambiguous or silent for a specific request</li><li>Ask for additional identifiers when tool results contain multiple matches</li></ul>
+<h2>5.3 Implementing Error Propagation Strategies in Multi-agent Systems</h2>
+<h3>Key knowledge:</h3>
+<ul><li>Structured error context (failure type, query, partial results, alternatives) enables smarter coordinator recovery</li><li>Distinguish access failures (timeouts require a retry decision) from valid empty results (no matches)</li><li>Generic error statuses (“search unavailable”) hide valuable context from the coordinator</li><li>Silent suppression or aborting the whole workflow on a single failure are both anti-patterns</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Return structured error context: failure type, what was attempted, partial results, possible alternatives</li><li>Distinguish access failures from valid empty results</li><li>Perform local recovery in subagents for transient failures; propagate only non-recoverable errors with partial results</li><li>Annotate coverage in synthesis: what is well-supported vs where gaps remain</li></ul>
+<h2>5.4 Managing Context Efficiently When Investigating Large Codebases</h2>
+<h3>Key knowledge:</h3>
+<ul><li>Context degradation in long sessions: the model starts producing unstable answers and referring to “typical patterns” instead of specific classes</li><li>Scratchpad files preserve key findings across context boundaries</li><li>Delegating to subagents isolates verbose discovery output</li><li>Structured state persistence enables crash recovery</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Spawn subagents for specific questions while keeping high-level coordination in the main agent</li><li>Use scratchpad files to store key findings and reference them later</li><li>Summarize key findings before spawning next-phase subagents</li><li>Use <code>/compact</code> to reduce context usage during long investigations</li></ul>
+<h2>5.5 Designing Workflows with Human Oversight and Confidence Calibration</h2>
+<h3>Key knowledge:</h3>
+<ul><li>Aggregate metrics (e.g., 97% overall accuracy) can mask poor performance on specific document types or fields</li><li>Stratified random sampling measures error rates in high-confidence extractions</li><li>Field-level confidence calibration using labeled validation sets</li><li>Validate accuracy by document type and field segment before automating</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Implement stratified random sampling to detect new error patterns</li><li>Analyze accuracy by document type and field to validate stable performance</li><li>Output field-level confidence scores and calibrate review thresholds using labeled data</li><li>Route low-confidence or ambiguous-source extractions to human review</li></ul>
+<h2>5.6 Preserving Provenance and Handling Uncertainty in Multi-source Synthesis</h2>
+<h3>Key knowledge:</h3>
+<ul><li>Attribution is lost during summarization without preserving “claim → source” mappings</li><li>Structured mappings must be preserved during aggregation</li><li>Handle conflicting statistics by annotating conflicts with attribution rather than arbitrarily choosing one value</li><li>Include publication/collection dates to avoid misreading temporal differences as contradictions</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Require subagents to output “claim → source” mappings (URL, document name, quotes)</li><li>Structure reports to separate stable findings from disputed ones</li><li>Preserve conflicting values with annotations and pass them to the coordinator for reconciliation</li><li>Include publication dates for correct temporal interpretation</li><li>Render content by type: financial data as tables, news as prose, technical findings as structured lists</li></ul>
+<hr>

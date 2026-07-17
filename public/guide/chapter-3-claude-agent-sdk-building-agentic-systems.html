@@ -1,0 +1,75 @@
+<h1>Chapter 3: Claude Agent SDK — Building Agentic Systems</h1>
+<blockquote><p>Documentation: <a href="https://platform.claude.com/docs/en/agent-sdk/overview" target="_blank" rel="noopener noreferrer">Agent SDK</a> | <a href="https://platform.claude.com/docs/en/agent-sdk/hooks" target="_blank" rel="noopener noreferrer">Hooks</a> | <a href="https://platform.claude.com/docs/en/agent-sdk/subagents" target="_blank" rel="noopener noreferrer">Subagents</a> | <a href="https://platform.claude.com/docs/en/agent-sdk/sessions" target="_blank" rel="noopener noreferrer">Sessions</a></p></blockquote>
+<h2>3.1 What is an Agentic Loop</h2>
+<p>The agentic loop is the core pattern for autonomous task execution. The model doesn't just answer—it performs a sequence of actions:</p>
+<pre><code>1. Send a request to Claude with tools
+2. Receive a response
+3. Check stop_reason:
+   - "tool_use" -&gt; execute the tool, append the result to history, go back to step 1
+   - "end_turn" -&gt; the task is complete, show the result to the user
+4. Repeat until completion</code></pre>
+<p><strong>This is a model-driven approach:</strong> Claude decides which tool to call next based on context and prior tool results. This differs from hard-coded decision trees where the action sequence is fixed.</p>
+<p><strong>Anti-patterns (avoid):</strong></p>
+<ul><li>Parsing assistant text to detect completion (“Task completed”)</li><li>Using an arbitrary iteration limit (e.g., <code>max_iterations=5</code>) as the primary stop condition</li><li>Checking whether the assistant produced textual content as a completion signal</li></ul>
+<p><strong>Correct approach:</strong> the only reliable completion signal is <code>stop_reason == "end_turn"</code>.</p>
+<h2>3.2 <code>AgentDefinition</code> Configuration</h2>
+<p><code>AgentDefinition</code> is the agent configuration object in the Claude Agent SDK:</p>
+<pre><code class="lang-python">agent = AgentDefinition(
+    name="customer_support",
+    description="Handles customer requests for returns and order issues",
+    system_prompt="You are a customer support agent...",
+    allowed_tools=["get_customer", "lookup_order", "process_refund", "escalate_to_human"],
+    # For a coordinator:
+    # allowed_tools=["Task", "get_customer", ...]
+)</code></pre>
+<p><strong>Key parameters:</strong></p>
+<ul><li><code>name</code> / <code>description</code> — identification and description of the agent</li><li><code>system_prompt</code> — system prompt with instructions</li><li><code>allowed_tools</code> — list of allowed tools (principle of least privilege)</li></ul>
+<h2>3.3 Hub-and-Spoke: Coordinator and Subagents</h2>
+<p>A multi-agent architecture is typically built as a hub-and-spoke topology:</p>
+<pre><code>         Coordinator
+        /     |      \
+   Subagent1  Subagent2  Subagent3
+    (search)   (analysis)   (synthesis)</code></pre>
+<p><strong>The coordinator is responsible for:</strong></p>
+<ul><li>Decomposing the task into subtasks</li><li>Deciding which subagents are needed (dynamic selection)</li><li>Delegating work to subagents</li><li>Aggregating and validating results</li><li>Handling errors and retries</li><li>Communicating results to the user</li></ul>
+<p><strong>Critical principle: subagents have isolated context.</strong></p>
+<ul><li>Subagents do <strong>not</strong> automatically inherit the coordinator's conversation history</li><li>All required context must be <strong>explicitly passed</strong> in the subagent prompt</li><li>Subagents do not share memory across calls</li><li>All communication flows through the coordinator (for observability and error control)</li></ul>
+<h2>3.4 The <code>Task</code> Tool for Spawning Subagents</h2>
+<p>Subagents are spawned via the <code>Task</code> tool:</p>
+<pre><code class="lang-python"># The coordinator's allowedTools must include "Task"
+coordinator_agent = AgentDefinition(
+    allowed_tools=["Task", "get_customer"]
+)</code></pre>
+<p><strong>Explicit context passing is mandatory:</strong></p>
+<pre><code># Bad: the subagent has no context
+Task: "Analyze the document"
+
+# Good: full context in the prompt
+Task: "Analyze the following document.
+Document: [full document text]
+Prior search results: [web search results]
+Output format requirements: [schema]"</code></pre>
+<p><strong>Parallel spawning:</strong> a coordinator can call multiple <code>Task</code>s in one response—subagents run in parallel:</p>
+<pre><code># One coordinator response contains:
+Task 1: "Search for articles about X"
+Task 2: "Analyze document Y"
+Task 3: "Search for articles about Z"
+# All three run concurrently</code></pre>
+<h2>3.5 Hooks in the Agent SDK</h2>
+<p>Hooks allow interception and transformation at specific points in the agent lifecycle.</p>
+<p><strong>PostToolUse</strong> intercepts a tool result before it is provided to the model:</p>
+<pre><code class="lang-python"># Example: normalize date formats from different MCP tools
+@hook("PostToolUse")
+def normalize_dates(tool_result):
+    # Convert Unix timestamp -&gt; ISO 8601
+    # Convert "Mar 5, 2025" -&gt; "2025-03-05"
+    return normalized_result</code></pre>
+<p><strong>Outgoing-call interception hook</strong> blocks actions that violate policy:</p>
+<pre><code class="lang-python"># Example: block refunds above $500
+@hook("PreToolUse")
+def enforce_refund_limit(tool_call):
+    if tool_call.name == "process_refund" and tool_call.args.amount &gt; 500:
+        return redirect_to_escalation(tool_call)</code></pre>
+<p><strong>Key difference: hooks vs prompt instructions</strong></p>
+<div class="md-table-wrap"><table><thead><tr><th>Attribute</th><th>Hooks</th><th>Prompt instructions</th></tr></thead><tbody><tr><td>Guarantee</td><td><strong>Deterministic</strong> (100%)</td><td><strong>Probabilistic</strong> (&gt;90%, not 100%)</td></tr><tr><td>When to use</td><td>Critical business rules, financial operations, compliance</td><td>General preferences, recommendations, formatting</td></tr><tr><td>Example</td><td>Block refunds &gt; $500</td><td>“Try to solve before escalating”</td></tr></tbody></table></div>
+<p><strong>Rule:</strong> when failure has financial, legal, or safety consequences—use hooks, not prompts.</p>

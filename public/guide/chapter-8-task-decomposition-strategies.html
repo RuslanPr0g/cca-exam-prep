@@ -1,0 +1,27 @@
+<h1>Chapter 8: Task Decomposition Strategies</h1>
+<h2>8.1 Fixed Pipelines (Prompt Chaining)</h2>
+<p>Each step is defined in advance:</p>
+<pre><code>Document -&gt; Metadata extraction -&gt; Data extraction -&gt; Validation -&gt; Enrichment -&gt; Final output</code></pre>
+<p><strong>When to use:</strong></p>
+<ul><li>The task structure is predictable (reviews always follow the same template)</li><li>All steps are known up front</li><li>You need stability and reproducibility</li></ul>
+<h2>8.2 Dynamic Adaptive Decomposition</h2>
+<p>Subtasks are generated based on intermediate results:</p>
+<pre><code>1. "Add tests for a legacy codebase"
+2. -&gt; First: map the structure (Glob, Grep)
+3. -&gt; Found: 3 modules with no tests, 2 with partial coverage
+4. -&gt; Prioritize: start with the payments module (high risk)
+5. -&gt; During work: discovered a dependency on an external API
+6. -&gt; Adapt: add a mock for the external API before writing tests</code></pre>
+<p><strong>When to use:</strong></p>
+<ul><li>Open-ended investigative tasks</li><li>When the full scope is unknown up front</li><li>When each step depends on the results of the previous step</li></ul>
+<h2>8.3 Multi-pass Code Review</h2>
+<p>For pull requests with 10+ files:</p>
+<pre><code>Pass 1 (per-file): Analyze auth.ts -&gt; list local issues
+Pass 1 (per-file): Analyze database.ts -&gt; list local issues
+Pass 1 (per-file): Analyze routes.ts -&gt; list local issues
+...
+Pass 2 (integration): Analyze relationships between files
+  -&gt; Cross-file issues: inconsistent types, circular dependencies</code></pre>
+<p><strong>Why a single pass over 14 files is bad:</strong></p>
+<ul><li>Attention dilution: deep analysis for some files, shallow for others</li><li>Inconsistent comments: a pattern is flagged in one file but approved in another</li><li>Missed bugs: obvious errors get skipped due to cognitive overload</li></ul>
+<hr>

@@ -9,7 +9,10 @@
     "url": "https://github.com/RuslanPr0g/cca-exam-prep.git"
   },
   "scripts": {
+    "build:guide": "node scripts/build-guide.mjs",
+    "predev": "npm run build:guide",
     "dev": "vite",
+    "prebuild": "npm run build:guide",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",

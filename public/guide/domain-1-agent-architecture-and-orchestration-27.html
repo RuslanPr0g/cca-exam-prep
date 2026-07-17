@@ -1,0 +1,37 @@
+<h1>Domain 1: Agent Architecture and Orchestration (27%)</h1>
+<h2>1.1 Designing Agentic Loops for Autonomous Task Execution</h2>
+<h3>Key knowledge:</h3>
+<ul><li>Agent loop lifecycle: send a Claude request, check <code>stop_reason</code> (<code>"tool_use"</code> vs <code>"end_turn"</code>), execute tools, return results for the next iteration</li><li>Tool results are appended to the conversation history so the model can decide the next action</li><li>Model-driven decision making (Claude chooses the next tool) vs hard-coded decision trees</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Flow control: continue the loop when <code>stop_reason = "tool_use"</code> and stop on <code>"end_turn"</code></li><li>Appending tool results to context between iterations</li><li>Anti-patterns to avoid: parsing assistant text for completion, using arbitrary iteration limits as the primary stopping mechanism</li></ul>
+<h2>1.2 Orchestrating Multi-agent Systems (Coordinator–Subagent)</h2>
+<h3>Key knowledge:</h3>
+<ul><li>Hub-and-spoke architecture: the coordinator owns all inter-agent communication, error handling, and routing</li><li>Subagents operate with isolated context—they do not automatically inherit the coordinator’s history</li><li>Coordinator responsibilities: task decomposition, delegation, result aggregation, dynamic selection of subagents</li><li>Risk of overly narrow decomposition by the coordinator</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Split research coverage among subagents to minimize duplication</li><li>Implement iterative refinement loops (coordinator evaluates synthesis and re-routes tasks)</li><li>Route all communication through the coordinator for observability</li></ul>
+<h2>1.3 Configuring Subagent Calls, Context Passing, and Spawning</h2>
+<h3>Key knowledge:</h3>
+<ul><li><code>Task</code> tool spawns subagents; the coordinator’s <code>allowedTools</code> must include <code>"Task"</code></li><li>Subagent context must be explicitly included in the prompt; subagents do not inherit parent context</li><li><code>AgentDefinition</code> configuration: descriptions, system prompts, tool constraints</li><li>Session management via <code>fork_session</code> for exploring alternatives</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Include full outputs from prior agents in the subagent prompt</li><li>Use structured formats to separate data from metadata when passing context</li><li>Spawn parallel subagents via multiple <code>Task</code> calls in a single coordinator turn</li><li>Write coordinator prompts in terms of goals and quality criteria rather than step-by-step instructions</li></ul>
+<h2>1.4 Implementing Multi-step Workflows with Enforcement and Handoff Patterns</h2>
+<h3>Key knowledge:</h3>
+<ul><li>The difference between <strong>programmatic enforcement</strong> (hooks, preconditions) and <strong>prompt guidance</strong> for ordering a workflow</li><li>When you need deterministic guarantees (e.g., identity verification before financial operations), prompts alone are insufficient</li><li>Structured handoff protocols during escalation (customer ID, reason, recommended action)</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Programmatic preconditions that block downstream calls until prior steps are complete (e.g., block <code>process_refund</code> until <code>get_customer</code> returns a verified ID)</li><li>Decompose multi-aspect customer requests into separate items</li><li>Produce structured summaries when escalating to a human</li></ul>
+<h2>1.5 Agent SDK Hooks for Intercepting Tool Calls and Normalizing Data</h2>
+<h3>Key knowledge:</h3>
+<ul><li>Hook patterns (e.g., <code>PostToolUse</code>) to intercept tool results before the model consumes them</li><li>Hooks that intercept outgoing calls to enforce compliance rules (e.g., block refunds above a threshold)</li><li>Hooks provide <strong>deterministic guarantees</strong> vs prompt instructions that provide <strong>probabilistic compliance</strong></li></ul>
+<h3>Key skills:</h3>
+<ul><li><code>PostToolUse</code> hooks for normalizing data formats (Unix timestamps, ISO 8601, numeric status codes)</li><li>Interception hooks to block policy-violating actions with redirection to escalation</li><li>Choose hooks over prompts when business rules require guaranteed compliance</li></ul>
+<h2>1.6 Task Decomposition Strategies for Complex Workflows</h2>
+<h3>Key knowledge:</h3>
+<ul><li><strong>Fixed pipelines</strong> (prompt chaining) vs <strong>dynamic adaptive decomposition</strong> based on intermediate results</li><li>Prompt chaining: sequential steps (analyze each file separately, then run an integration pass)</li><li>Adaptive investigation plans that generate subtasks based on what was discovered</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Use prompt chaining for predictable multi-aspect reviews; use dynamic decomposition for open-ended investigations</li><li>Split large code reviews into per-file analysis plus a separate cross-file integration pass</li><li>Decompose open-ended tasks: map structure first, then build a prioritized plan</li></ul>
+<h2>1.7 Session State, Resuming, and Forking</h2>
+<h3>Key knowledge:</h3>
+<ul><li><code>--resume &lt;session-name&gt;</code> to continue named sessions</li><li><code>fork_session</code> to create independent investigation branches from shared context</li><li>The importance of informing the agent about file changes when resuming sessions</li><li>A new session with a structured summary can be more reliable than resuming with stale results</li></ul>
+<h3>Key skills:</h3>
+<ul><li>Use <code>--resume</code> to continue named investigation sessions</li><li>Use <code>fork_session</code> to compare approaches in parallel</li><li>Choose between resuming (context still current) vs starting a new session (results stale)</li></ul>
+<hr>
