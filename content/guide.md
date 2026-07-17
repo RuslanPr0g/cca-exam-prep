@@ -10,6 +10,8 @@ The **Claude Certified Architect — Foundations** certification confirms that a
 
 The exam questions are based on realistic industry scenarios: building agentic systems for customer support, designing multi-agent research pipelines, integrating Claude Code into CI/CD, creating developer productivity tools, and extracting structured data from unstructured documents.
 
+> **📚 Additional learning resource:** For even more detailed learning material and another set of mock practice exam tasks, see the [Claude Certification Guide — Learning Progress](https://claudecertificationguide.com/learn/progress). It complements this study guide with extra explanations and additional practice questions to help you prepare.
+
 ---
 
 ## Target Candidate
