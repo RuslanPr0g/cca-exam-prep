@@ -12,6 +12,8 @@ Answer real exam-style multiple-choice questions and get an explanation after ev
 - **⭐ Regular Hard** — questions you bookmarked as tricky, for focused review
 - **✨ AI** — a supplementary bank of AI-generated questions covering the same material from different angles
 - **✨⭐ AI Hard** — your bookmarked AI questions
+- **🎲 Random** — a random mix of every question
+- **📖 Guide** — the full study guide to read chapter by chapter, with a table of contents and per-chapter "read" tracking saved in your browser
 
 Bookmark any question mid-quiz with the ☆ button to add it to its "Hard" tab. A reset button clears your progress if you want to start fresh.
 
@@ -20,6 +22,8 @@ No account, no sign-up, no tracking — everything lives in your browser.
 ## Contributing questions
 
 Have a question that should be in the bank, or spotted one that's wrong? Open an issue or a PR. See `reports/ai-questions-authoring-guide.md` for the format used by the AI-generated bank.
+
+The study guide text (`public/guide.md`) comes from [paullarionov/claude-certified-architect](https://github.com/paullarionov/claude-certified-architect).
 
 ## Running it locally
 
