@@ -2,19 +2,22 @@
 const KEY_CORRECT   = 'quiz_correct';    // Set of question IDs answered correctly
 const KEY_HARD      = 'quiz_hard';       // Set of question IDs marked as hard
 const KEY_TAB       = 'quiz_tab';        // persisted active tab (see VALID_TABS below)
+const KEY_GUIDE     = 'guide_read';      // Set of Study Guide chapter ids marked read
+const KEY_GUIDE_LAST = 'guide_last';     // last-opened Study Guide chapter id (resume point)
 
 // A single enum of the four question sets replaces two independent booleans
 // (hard mode x source). Two orthogonal toggles produce combinations that are
 // easy to leave inconsistent (e.g. a stale message from one toggle's branch
 // after switching the other); one tab value has no such cross-product to get
 // out of sync.
-export const VALID_TABS = ['standard', 'standard-hard', 'ai', 'ai-hard', 'random'];
+export const VALID_TABS = ['standard', 'standard-hard', 'ai', 'ai-hard', 'random', 'guide'];
 
 // ── In-memory cache (BUG-08) ──────────────────────────────────────────────────
 // Avoids redundant JSON.parse on every read within the same interaction.
 // Invalidated on every write.
 let _cacheCorrect = null;
 let _cacheHard    = null;
+let _cacheGuide   = null;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function loadSet(key) {
@@ -69,6 +72,37 @@ export function toggleHardQuestion(id) {
 export function isHard(id)    { return getHardIds().has(id); }
 export function isCorrect(id) { return getCorrectIds().has(id); }
 
+// ── Study Guide read state ────────────────────────────────────────────────────
+// Chapters the user has marked as read (by chapter id) and the last chapter
+// opened, so the guide can resume where they left off. Mirrors the correct/hard
+// caching pattern above.
+export function getGuideReadIds() {
+  return (_cacheGuide ??= loadSet(KEY_GUIDE));
+}
+
+export function isGuideRead(id) { return getGuideReadIds().has(id); }
+
+/**
+ * Toggle a chapter's read state. Returns the NEW state:
+ * true = now read, false = now unread.
+ */
+export function toggleGuideRead(id) {
+  const s = getGuideReadIds();
+  if (s.has(id)) s.delete(id);
+  else           s.add(id);
+  saveSet(KEY_GUIDE, s);
+  _cacheGuide = s;
+  return s.has(id);
+}
+
+export function getGuideLast() {
+  return localStorage.getItem(KEY_GUIDE_LAST);
+}
+
+export function setGuideLast(id) {
+  localStorage.setItem(KEY_GUIDE_LAST, id);
+}
+
 /** Fisher-Yates shuffle (in-place). Returns array. */
 export function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -95,14 +129,17 @@ export function buildQueue(questions, { excludeCorrect = true } = {}) {
   return shuffle(pending);
 }
 
-/** Reset all progress (both correct and hard bookmarks). */
+/** Reset all progress (correct answers, hard bookmarks, and guide reading). */
 export function resetAll() {
   localStorage.removeItem(KEY_CORRECT);
   localStorage.removeItem(KEY_HARD);
   localStorage.removeItem(KEY_TAB);
+  localStorage.removeItem(KEY_GUIDE);
+  localStorage.removeItem(KEY_GUIDE_LAST);
   // Bust cache
   _cacheCorrect = null;
   _cacheHard    = null;
+  _cacheGuide   = null;
 }
 
 /**

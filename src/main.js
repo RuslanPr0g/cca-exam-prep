@@ -9,7 +9,13 @@ import {
   getHardIds,
   getCorrectIds,
   setPersistedTab, // still persisted for any future non-URL entry point
+  getGuideReadIds,
+  isGuideRead,
+  toggleGuideRead,
+  getGuideLast,
+  setGuideLast,
 } from './store.js';
+import { renderMarkdown, splitChapters } from './markdown.js';
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 // One explicit tab replaces the old two independent toggles (hard mode x
@@ -35,12 +41,16 @@ function tabIsRandom(tab) { return tab === 'random'; }
 // routes below, resolves to 'random'. The catch-all also covers direct/deep
 // links on GitHub Pages, which 404s server-side for any path but the site
 // root — see public/404.html, which redirects those straight to /random.
+// The Study Guide ('guide') is a routable tab too, but it is deliberately NOT
+// in TAB_META above: TAB_META drives the quiz question-set machinery (queues,
+// stats, empty-state shortcuts), and the guide renders its own screen instead.
 const TAB_ROUTES = {
   'standard':      'regular',
   'standard-hard': 'regular-hard',
   'ai':            'ai',
   'ai-hard':       'ai-hard',
   'random':        'random',
+  'guide':         'guide',
 };
 const ROUTE_TABS = Object.fromEntries(
   Object.entries(TAB_ROUTES).map(([tab, route]) => [route, tab])
@@ -70,6 +80,7 @@ function urlForTab(tab) { return `${import.meta.env.BASE_URL}${routeFromTab(tab)
 const screenLoading = document.getElementById('screen-loading');
 const screenEmpty   = document.getElementById('screen-empty');
 const screenQuiz    = document.getElementById('screen-quiz');
+const screenGuide   = document.getElementById('screen-guide');
 
 const statsEl      = document.getElementById('stats');
 const emptyEmoji   = document.getElementById('empty-emoji');
@@ -89,6 +100,17 @@ const btnReset     = document.getElementById('btn-reset');
 const questionCard = document.getElementById('question-card');
 const tabButtons   = Array.from(document.querySelectorAll('.tab-btn'));
 
+// Study Guide refs
+const guideLayout    = document.getElementById('guide-layout');
+const guideTocList   = document.getElementById('guide-toc-list');
+const guideTocCount  = document.getElementById('guide-toc-count');
+const guideProgress  = document.getElementById('guide-progress-bar');
+const guideContent   = document.getElementById('guide-content');
+const guideMarkRead  = document.getElementById('guide-mark-read');
+const guideBack      = document.getElementById('guide-back');
+const guidePrev      = document.getElementById('guide-prev');
+const guideNext      = document.getElementById('guide-next');
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let allQuestions = [];
 let aiQuestions  = [];
@@ -99,6 +121,11 @@ let currentIndex = 0;
 // see TAB_ROUTES above): bare/unrecognized paths default to 'random'.
 let activeTab    = tabFromRoute(currentRoute());
 let answered     = false; // BUG-06: guard against double-answer race
+
+// Study Guide state (lazily loaded the first time the Guide tab is opened).
+let guideChapters = [];
+let guideLoaded   = false;
+let guideCurrentId = null;
 
 // ── Tab / question-set helpers ────────────────────────────────────────────────
 function getSourceQuestions(tab) {
@@ -151,10 +178,18 @@ async function init() {
   }
 
   updateTabUI();
-  rebuildQueue();
+  showActiveTab();
+}
+
+// Route the active tab to its screen: the Study Guide renders its own reading
+// view, every other tab runs the quiz queue.
+function showActiveTab() {
+  if (activeTab === 'guide') showGuide();
+  else rebuildQueue();
 }
 
 function updateStats() {
+  if (activeTab === 'guide') { updateGuideStats(); return; }
   const s = getStats(getTabBaseQuestions(activeTab));
   statsEl.innerHTML = `
     <span class="stat-item"><strong>${s.done}</strong> / ${s.total} done</span>
@@ -166,6 +201,9 @@ function updateTabUI() {
   tabButtons.forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === activeTab);
   });
+  // Widen the layout for the Guide's two-pane reading view (see .guide-active
+  // in style.css); quiz tabs keep the narrow single-column width.
+  document.body.classList.toggle('guide-active', activeTab === 'guide');
   // .ai-mode is decided per-question in showQuestion() now, not per-tab —
   // Random mixes both sources, so a tab-level decision would be wrong there.
 }
@@ -177,10 +215,12 @@ function showScreen(name) {
   screenLoading.hidden = true;
   screenEmpty.hidden   = true;
   screenQuiz.hidden    = true;
+  screenGuide.hidden   = true;
 
   if (name === 'loading') screenLoading.hidden = false;
   if (name === 'empty')   screenEmpty.hidden   = false;
   if (name === 'quiz')    screenQuiz.hidden    = false;
+  if (name === 'guide')   screenGuide.hidden   = false;
 }
 
 // Single rebuild path for every tab switch / "next question at end of queue"
@@ -361,7 +401,7 @@ function switchTab(tab) {
   setPersistedTab(tab); // BUG-16: persist across refresh
   history.pushState({ tab }, '', urlForTab(tab));
   updateTabUI();
-  rebuildQueue();
+  showActiveTab();
 }
 
 // Back/forward navigation between tab URLs — re-sync state from the URL
@@ -372,8 +412,156 @@ window.addEventListener('popstate', () => {
   if (tab === activeTab) return;
   activeTab = tab;
   updateTabUI();
-  rebuildQueue();
+  showActiveTab();
 });
+
+// ── Study Guide ─────────────────────────────────────────────────────────────
+// The guide is a big Markdown document (public/guide.md) split into chapters.
+// It's fetched and parsed lazily the first time the tab is opened, then read
+// per-chapter with read-state persisted in localStorage (see store.js).
+
+async function showGuide() {
+  showScreen('guide');
+
+  if (!guideLoaded) {
+    guideContent.innerHTML = '<div class="guide-loading"><div class="spinner"></div><p>Loading study guide…</p></div>';
+    await loadGuide();
+    // Bail if the user switched tabs while the fetch was in flight.
+    if (activeTab !== 'guide') return;
+  }
+
+  if (guideChapters.length === 0) {
+    guideContent.innerHTML = '<p class="guide-error">⚠️ Failed to load the study guide. Please refresh.</p>';
+    updateGuideStats();
+    return;
+  }
+
+  buildToc();
+  updateGuideStats();
+
+  // Resume at the last-opened chapter if it still exists, else the first one.
+  const last = getGuideLast();
+  const startId = guideChapters.some(c => c.id === last) ? last : guideChapters[0].id;
+  // openReader:false — on mobile this leaves the chapter list showing rather
+  // than jumping straight into the reader (desktop shows both panes anyway).
+  selectChapter(startId, { openReader: false });
+}
+
+async function loadGuide() {
+  try {
+    const res = await fetch(`${import.meta.env.BASE_URL}guide.md`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const md = await res.text();
+    guideChapters = splitChapters(md);
+  } catch (err) {
+    console.error('Failed to load study guide:', err);
+    guideChapters = [];
+  }
+  guideLoaded = true;
+}
+
+function buildToc() {
+  guideTocList.innerHTML = '';
+  guideChapters.forEach((ch, idx) => {
+    const li = document.createElement('li');
+    li.className = 'guide-toc-item';
+    li.dataset.id = ch.id;
+    if (ch.id === guideCurrentId) li.classList.add('active');
+    if (isGuideRead(ch.id))       li.classList.add('read');
+
+    const check = document.createElement('button');
+    check.className = 'guide-toc-check';
+    check.title = 'Mark chapter as read';
+    check.textContent = isGuideRead(ch.id) ? '✓' : '○';
+    check.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleGuideRead(ch.id);
+      refreshGuideReadUI();
+    });
+
+    const link = document.createElement('button');
+    link.className = 'guide-toc-link';
+    link.innerHTML = `<span class="guide-toc-num">${idx + 1}</span><span class="guide-toc-text">${escapeText(ch.title)}</span>`;
+    link.addEventListener('click', () => selectChapter(ch.id, { openReader: true }));
+
+    li.appendChild(check);
+    li.appendChild(link);
+    guideTocList.appendChild(li);
+  });
+}
+
+// Refresh only the parts that depend on read-state (TOC ticks, progress bar,
+// header count, mark-read button) without re-selecting the chapter.
+function refreshGuideReadUI() {
+  Array.from(guideTocList.children).forEach(li => {
+    const read = isGuideRead(li.dataset.id);
+    li.classList.toggle('read', read);
+    const check = li.querySelector('.guide-toc-check');
+    if (check) check.textContent = read ? '✓' : '○';
+  });
+  setMarkReadButton();
+  updateGuideStats();
+}
+
+function updateGuideStats() {
+  const total = guideChapters.length;
+  const read = guideChapters.filter(c => isGuideRead(c.id)).length;
+  const pct = total === 0 ? 0 : (read / total) * 100;
+  guideProgress.style.width = `${pct}%`;
+  guideTocCount.textContent = `${read} / ${total} read`;
+  statsEl.innerHTML = `<span class="stat-item"><strong>${read}</strong> / ${total} read</span>`;
+}
+
+function selectChapter(id, { openReader = false } = {}) {
+  const ch = guideChapters.find(c => c.id === id);
+  if (!ch) return;
+
+  guideCurrentId = id;
+  setGuideLast(id);
+
+  guideContent.innerHTML = renderMarkdown(ch.markdown);
+  guideContent.scrollTop = 0;
+
+  // Highlight the active chapter in the TOC.
+  Array.from(guideTocList.children).forEach(li => {
+    li.classList.toggle('active', li.dataset.id === id);
+  });
+
+  // Prev/Next availability.
+  const idx = guideChapters.findIndex(c => c.id === id);
+  guidePrev.disabled = idx <= 0;
+  guideNext.disabled = idx >= guideChapters.length - 1;
+
+  setMarkReadButton();
+
+  // On mobile, swap the single column from the chapter list to the reader.
+  if (openReader) guideLayout.classList.add('reading');
+}
+
+function setMarkReadButton() {
+  const read = guideCurrentId != null && isGuideRead(guideCurrentId);
+  guideMarkRead.classList.toggle('is-read', read);
+  guideMarkRead.textContent = read ? '✓ Read' : 'Mark as read';
+}
+
+function handleGuideMarkRead() {
+  if (guideCurrentId == null) return;
+  toggleGuideRead(guideCurrentId);
+  refreshGuideReadUI();
+}
+
+function handleGuideNav(delta) {
+  const idx = guideChapters.findIndex(c => c.id === guideCurrentId);
+  const nextIdx = idx + delta;
+  if (nextIdx < 0 || nextIdx >= guideChapters.length) return;
+  selectChapter(guideChapters[nextIdx].id, { openReader: true });
+}
+
+// Small helper for text inserted via innerHTML in the TOC (titles are already
+// markdown-stripped by splitChapters, but escape defensively all the same).
+function escapeText(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
 // ── Space background (fewer stars on narrow viewports, never fully hidden) ──
 function initSpaceBackground() {
@@ -413,6 +601,12 @@ btnReset.addEventListener('click', handleReset);
 tabButtons.forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.tab));
 });
+
+// Study Guide controls
+guideMarkRead.addEventListener('click', handleGuideMarkRead);
+guidePrev.addEventListener('click', () => handleGuideNav(-1));
+guideNext.addEventListener('click', () => handleGuideNav(1));
+guideBack.addEventListener('click', () => guideLayout.classList.remove('reading'));
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 // Flat space-gradient shows first (see index.html); reveal everything with a
