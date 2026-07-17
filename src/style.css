@@ -612,6 +612,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 }
 
 .guide-content {
+  transition: opacity .18s ease;
   min-width: 0; /* let inner tables/code scroll instead of stretching the pane */
   background: #1c1e30;
   border: 1px solid var(--border);
@@ -623,6 +624,7 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 .guide-loading { text-align: center; padding: 2rem 0; color: var(--text-muted); }
 .guide-loading .spinner { margin: 0 auto 1rem; }
 .guide-error { text-align: center; color: var(--warn); padding: 2rem 0; }
+.guide-content-fade { opacity: 0; }
 
 .guide-reader-nav {
   display: flex;

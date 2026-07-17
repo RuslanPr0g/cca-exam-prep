@@ -85,29 +85,29 @@ This scenario has been reported by exam candidates but is not yet covered in thi
 
 | Resource | URL |
 |---|---|
-| **Claude API — Messages** | https://platform.claude.com/docs/en/api/messages |
-| **Claude API — Tool Use** | https://platform.claude.com/docs/en/build-with-claude/tool-use |
-| **Claude API — Message Batches** | https://platform.claude.com/docs/en/build-with-claude/message-batches |
-| **Claude Agent SDK — Overview** | https://platform.claude.com/docs/en/agent-sdk/overview |
-| **Claude Agent SDK — Hooks** | https://platform.claude.com/docs/en/agent-sdk/hooks |
-| **Claude Agent SDK — Subagents** | https://platform.claude.com/docs/en/agent-sdk/subagents |
-| **Claude Agent SDK — Sessions** | https://platform.claude.com/docs/en/agent-sdk/sessions |
-| **Model Context Protocol (MCP)** | https://modelcontextprotocol.io/ |
-| **MCP — Tools** | https://modelcontextprotocol.io/docs/concepts/tools |
-| **MCP — Resources** | https://modelcontextprotocol.io/docs/concepts/resources |
-| **MCP — Servers** | https://modelcontextprotocol.io/docs/concepts/servers |
-| **Claude Code — Documentation** | https://code.claude.com/docs/en/overview |
-| **Claude Code — CLAUDE.md and Memory** | https://code.claude.com/docs/en/memory |
-| **Claude Code — Skills (incl. slash commands)** | https://code.claude.com/docs/en/skills |
-| **Claude Code — Hooks** | https://code.claude.com/docs/en/hooks |
-| **Claude Code — Sub-agents** | https://code.claude.com/docs/en/sub-agents |
-| **Claude Code — MCP Integration** | https://code.claude.com/docs/en/mcp |
-| **Claude Code — GitHub Actions CI/CD** | https://code.claude.com/docs/en/github-actions |
-| **Claude Code — GitLab CI/CD** | https://code.claude.com/docs/en/gitlab-ci-cd |
-| **Claude Code — Headless (non-interactive mode)** | https://code.claude.com/docs/en/headless |
-| **Prompt Engineering Guide** | https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview |
-| **Extended Thinking** | https://platform.claude.com/docs/en/build-with-claude/extended-thinking |
-| **Anthropic Cookbook (code examples)** | https://github.com/anthropics/anthropic-cookbook |
+| **Claude API — Messages** | [platform.claude.com/docs/en/api/messages](https://platform.claude.com/docs/en/api/messages) |
+| **Claude API — Tool Use** | [platform.claude.com/docs/en/build-with-claude/tool-use](https://platform.claude.com/docs/en/build-with-claude/tool-use) |
+| **Claude API — Message Batches** | [platform.claude.com/docs/en/build-with-claude/message-batches](https://platform.claude.com/docs/en/build-with-claude/message-batches) |
+| **Claude Agent SDK — Overview** | [platform.claude.com/docs/en/agent-sdk/overview](https://platform.claude.com/docs/en/agent-sdk/overview) |
+| **Claude Agent SDK — Hooks** | [platform.claude.com/docs/en/agent-sdk/hooks](https://platform.claude.com/docs/en/agent-sdk/hooks) |
+| **Claude Agent SDK — Subagents** | [platform.claude.com/docs/en/agent-sdk/subagents](https://platform.claude.com/docs/en/agent-sdk/subagents) |
+| **Claude Agent SDK — Sessions** | [platform.claude.com/docs/en/agent-sdk/sessions](https://platform.claude.com/docs/en/agent-sdk/sessions) |
+| **Model Context Protocol (MCP)** | [modelcontextprotocol.io](https://modelcontextprotocol.io/) |
+| **MCP — Tools** | [modelcontextprotocol.io/docs/concepts/tools](https://modelcontextprotocol.io/docs/concepts/tools) |
+| **MCP — Resources** | [modelcontextprotocol.io/docs/concepts/resources](https://modelcontextprotocol.io/docs/concepts/resources) |
+| **MCP — Servers** | [modelcontextprotocol.io/docs/concepts/servers](https://modelcontextprotocol.io/docs/concepts/servers) |
+| **Claude Code — Documentation** | [code.claude.com/docs/en/overview](https://code.claude.com/docs/en/overview) |
+| **Claude Code — CLAUDE.md and Memory** | [code.claude.com/docs/en/memory](https://code.claude.com/docs/en/memory) |
+| **Claude Code — Skills (incl. slash commands)** | [code.claude.com/docs/en/skills](https://code.claude.com/docs/en/skills) |
+| **Claude Code — Hooks** | [code.claude.com/docs/en/hooks](https://code.claude.com/docs/en/hooks) |
+| **Claude Code — Sub-agents** | [code.claude.com/docs/en/sub-agents](https://code.claude.com/docs/en/sub-agents) |
+| **Claude Code — MCP Integration** | [code.claude.com/docs/en/mcp](https://code.claude.com/docs/en/mcp) |
+| **Claude Code — GitHub Actions CI/CD** | [code.claude.com/docs/en/github-actions](https://code.claude.com/docs/en/github-actions) |
+| **Claude Code — GitLab CI/CD** | [code.claude.com/docs/en/gitlab-ci-cd](https://code.claude.com/docs/en/gitlab-ci-cd) |
+| **Claude Code — Headless (non-interactive mode)** | [code.claude.com/docs/en/headless](https://code.claude.com/docs/en/headless) |
+| **Prompt Engineering Guide** | [platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview) |
+| **Extended Thinking** | [platform.claude.com/docs/en/build-with-claude/extended-thinking](https://platform.claude.com/docs/en/build-with-claude/extended-thinking) |
+| **Anthropic Cookbook (code examples)** | [github.com/anthropics/anthropic-cookbook](https://github.com/anthropics/anthropic-cookbook) |
 
 ---
 

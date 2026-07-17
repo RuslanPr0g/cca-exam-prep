@@ -606,20 +606,22 @@ async function selectChapter(id, { openReader = false } = {}) {
   // On mobile, swap the single column from the chapter list to the reader.
   if (openReader) guideLayout.classList.add('reading');
 
-  // Start each chapter from the top (the page itself scrolls, not the article).
-  window.scrollTo({ top: 0 });
-  guideContent.scrollTop = 0;
-
-  // Inject the chapter's pre-rendered HTML page. Guard against a slower fetch
-  // for a chapter the user has since navigated away from.
+  // Fade out, load HTML, scroll to top, then fade back in.
+  guideContent.classList.add('guide-content-fade');
   try {
     const html = await fetchChapterHtml(id);
-    if (guideCurrentId === id) guideContent.innerHTML = html;
+    if (guideCurrentId !== id) return; // navigated away during fetch
+    guideContent.innerHTML = html;
+    // Scroll after content is injected so the page is at the top when visible.
+    window.scrollTo({ top: 0 });
+    guideContent.scrollTop = 0;
   } catch (err) {
     console.error('Failed to load chapter:', id, err);
     if (guideCurrentId === id) {
       guideContent.innerHTML = '<p class="guide-error">⚠️ Failed to load this chapter. Please refresh.</p>';
     }
+  } finally {
+    if (guideCurrentId === id) guideContent.classList.remove('guide-content-fade');
   }
 }
 
