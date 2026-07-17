@@ -621,9 +621,18 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 .guide-reader-nav {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: .5rem;
+  flex-wrap: wrap;
+}
+.guide-nav-next {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .guide-reader-nav button:disabled { opacity: .35; cursor: default; }
+.guide-reader-nav button:disabled:hover { transform: none; box-shadow: none; }
 
 /* ── Rendered Markdown ────────────────────────────────────────────────────── */
 .markdown-body { font-size: .78rem; line-height: 1.65; color: var(--text); }
@@ -648,8 +657,19 @@ button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 .markdown-body li > ul,
 .markdown-body li > ol { margin: .28rem 0 .3rem; }
 
-.markdown-body a { color: var(--primary-h); text-decoration: underline; text-underline-offset: 2px; }
-.markdown-body a:hover { color: #fff; }
+/* Recognisable "web link" styling: a clear link-blue, always underlined, with
+   a brighter hover — so links read as links against the body text. */
+.markdown-body a {
+  color: #6ea8fe;
+  text-decoration: underline;
+  text-decoration-color: rgba(110,168,254,.55);
+  text-underline-offset: 2px;
+  transition: color .14s, text-decoration-color .14s;
+}
+.markdown-body a:hover {
+  color: #9cc4ff;
+  text-decoration-color: #9cc4ff;
+}
 
 .markdown-body strong { color: #fff; font-weight: 700; }
 

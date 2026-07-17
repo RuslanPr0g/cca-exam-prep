@@ -130,6 +130,7 @@ const guideMarkRead  = document.getElementById('guide-mark-read');
 const guideBack      = document.getElementById('guide-back');
 const guidePrev      = document.getElementById('guide-prev');
 const guideNext      = document.getElementById('guide-next');
+const guideNextRead  = document.getElementById('guide-next-read');
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let allQuestions = [];
@@ -570,22 +571,27 @@ function selectChapter(id, { openReader = false } = {}) {
   setGuideLast(id);
 
   guideContent.innerHTML = renderMarkdown(ch.markdown);
-  guideContent.scrollTop = 0;
 
   // Highlight the active chapter in the TOC.
   Array.from(guideTocList.children).forEach(li => {
     li.classList.toggle('active', li.dataset.id === id);
   });
 
-  // Prev/Next availability.
+  // Prev/Next availability. "Read & Next" stays enabled on the last chapter —
+  // there it just marks the chapter read (see handleGuideReadNext).
   const idx = guideChapters.findIndex(c => c.id === id);
+  const isLast = idx >= guideChapters.length - 1;
   guidePrev.disabled = idx <= 0;
-  guideNext.disabled = idx >= guideChapters.length - 1;
+  guideNext.disabled = isLast;
 
   setMarkReadButton();
 
   // On mobile, swap the single column from the chapter list to the reader.
   if (openReader) guideLayout.classList.add('reading');
+
+  // Start each chapter from the top (the page itself scrolls, not the article).
+  window.scrollTo({ top: 0 });
+  guideContent.scrollTop = 0;
 }
 
 function setMarkReadButton() {
@@ -605,6 +611,16 @@ function handleGuideNav(delta) {
   const nextIdx = idx + delta;
   if (nextIdx < 0 || nextIdx >= guideChapters.length) return;
   selectChapter(guideChapters[nextIdx].id, { openReader: true });
+}
+
+// "Read & Next": mark the current chapter read (never toggles it back off),
+// then advance. On the last chapter it just marks read — there's nothing after.
+function handleGuideReadNext() {
+  if (guideCurrentId != null && !isGuideRead(guideCurrentId)) {
+    toggleGuideRead(guideCurrentId);
+    refreshGuideReadUI();
+  }
+  handleGuideNav(1);
 }
 
 // Small helper for text inserted via innerHTML in the TOC (titles are already
@@ -656,6 +672,7 @@ tabButtons.forEach(btn => {
 guideMarkRead.addEventListener('click', handleGuideMarkRead);
 guidePrev.addEventListener('click', () => handleGuideNav(-1));
 guideNext.addEventListener('click', () => handleGuideNav(1));
+guideNextRead.addEventListener('click', handleGuideReadNext);
 guideBack.addEventListener('click', () => guideLayout.classList.remove('reading'));
 
 // ── Start ─────────────────────────────────────────────────────────────────────
